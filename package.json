@@ -1,7 +1,7 @@
 {
-  "name": "compound-protocol",
+  "name": "lodestar-protocol",
   "version": "0.2.1",
-  "description": "The Compound Money Market",
+  "description": "The Lodestar Finance Money Market",
   "main": "index.js",
   "scripts": {
     "compile": "./script/compile",
@@ -16,8 +16,8 @@
     "test:prepare": "NO_RUN=true ./script/test",
     "checksize": "npx run ./script/saddle/comptrollerSize.js"
   },
-  "repository": "git@github.com:compound-finance/compound-protocol.git",
-  "author": "Compound Finance",
+  "repository": "git@github.com:LodestarFinance/lodestar-protocol.git",
+  "author": "Lodestar Finance",
   "license": "UNLICENSED",
   "devDependencies": {
     "bignumber.js": "9.0.0",
