@@ -44,7 +44,7 @@ interface GovernorBravoInterface {
     function getReceipt(uint proposalId, address voter) external view returns (Receipt memory);
 }
 
-contract CompoundLens {
+contract CompoundLensOriginal {
     struct CTokenMetadata {
         address cToken;
         uint exchangeRateCurrent;
@@ -236,21 +236,6 @@ contract CompoundLens {
             res[i] = cTokenUnderlyingPrice(cTokens[i]);
         }
         return res;
-    }
-
-    struct LodePrice {
-        address Lode;
-        uint256 LodePrice;
-    }
-
-    function lodePrice(address _comptroller, address lodeAddress) public returns (LodePrice memory) {
-        ComptrollerLensInterface comptroller = ComptrollerLensInterface(_comptroller);
-        PriceOracle priceOracle = comptroller.oracle();
-        uint256 LodeTokenPrice = priceOracle.getLodePrice(lodeAddress);
-        return LodePrice({
-            Lode: lodeAddress,
-            LodePrice: LodeTokenPrice
-        });
     }
 
     struct AccountLimits {
