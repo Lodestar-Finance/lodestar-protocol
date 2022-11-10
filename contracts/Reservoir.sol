@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
+import "./EIP20Interface.sol";
+
 /**
  * @title Reservoir Contract
  * @notice Distributes a token to a different contract at a fixed rate.
@@ -30,7 +32,7 @@ contract Reservoir {
     * @param token_ The token to drip
     * @param target_ The recipient of dripped tokens
     */
-  constructor(uint dripRate_, EIP20Interface token_, address target_) public {
+  constructor(uint dripRate_, EIP20Interface token_, address target_) {
     dripStart = block.number;
     dripRate = dripRate_;
     token = token_;
@@ -100,4 +102,4 @@ contract Reservoir {
   }
 }
 
-import "./EIP20Interface.sol";
+

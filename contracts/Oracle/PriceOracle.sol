@@ -1,6 +1,4 @@
-// SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
-
 import "../CToken.sol";
 
 abstract contract PriceOracle {
@@ -14,6 +12,4 @@ abstract contract PriceOracle {
       *  Zero means the price is unavailable.
       */
     function getUnderlyingPrice(CToken cToken) virtual external view returns (uint);
-
-    function getLodePrice(address tokenAddress) virtual external view returns (uint256);
 }

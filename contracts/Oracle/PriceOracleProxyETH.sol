@@ -46,7 +46,9 @@ contract PriceOracleProxyETH is Exponential {
     address public sequencerAddress;
 
     /// @notice LODE token
-    address public lodeAddress;
+    address public lLodeAddress;
+
+    uint256 lodePrice;
 
     struct AggregatorInfo {
         /// @notice The source address of the aggregator
@@ -72,7 +74,7 @@ contract PriceOracleProxyETH is Exponential {
      * @param letherAddress_ the address of the Ether cToken
      * @param lplvGLPAddress_ the address of the plvGLP cToken
      * @param glpOracleAddress_ the address of the GLP Oracle contract
-     * @param lodeAddress_ the address of the LODE token
+     * @param lLodeAddress_ the address of the LODE cToken
      */
     constructor(
         address admin_,
@@ -82,7 +84,7 @@ contract PriceOracleProxyETH is Exponential {
         address letherAddress_,
         address lplvGLPAddress_,
         address glpOracleAddress_,
-        address lodeAddress_
+        address lLodeAddress_
     ) {
         admin = admin_;
         v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
@@ -91,7 +93,7 @@ contract PriceOracleProxyETH is Exponential {
         letherAddress = letherAddress_;
         lplvGLPAddress = lplvGLPAddress_;
         glpOracleAddress = glpOracleAddress_;
-        lodeAddress = lodeAddress_;
+        lLodeAddress = lLodeAddress_;
     }
 
     /**
@@ -108,6 +110,9 @@ contract PriceOracleProxyETH is Exponential {
         } else if (cTokenAddress == lplvGLPAddress) {
             uint256 price = getPlvGLPPrice();
             price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
+            return price;
+        } else if (cTokenAddress == lLodeAddress) {
+            uint256 price = lodePrice;
             return price;
         } else if (address(aggregatorInfo.source) != address(0)) {
             bool sequencerStatus = getSequencerStatus(sequencerAddress);
@@ -163,15 +168,20 @@ contract PriceOracleProxyETH is Exponential {
         return v1PriceOracle.assetPrices(underlying);
     }
 
+    function setLodePrice (uint256 price) external {
+        require(msg.sender == admin, 'only the admin may set new guardian');
+        lodePrice = price;
+    }
+
     /**
      * @notice Get price of LODE token
      * @param tokenAddress the address of the LODE token contract
      * @return the price of LODE in wei
      */
-    function getLodePrice(address tokenAddress) public view returns (uint256){
+    /*function getLodePrice(address tokenAddress) public view returns (uint256){
         uint256 price = 100000000000000000;
         return price;
-    }
+    }*/
 
     /**
      * @notice Get L2 sequencer status from Chainlink sequencer aggregator

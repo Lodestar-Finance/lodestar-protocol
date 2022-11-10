@@ -65,6 +65,8 @@ contract CompoundLens {
         uint borrowCap;
     }
 
+    event lodeMetaData(uint balance, uint allocated);
+
     function getCompSpeeds(ComptrollerLensInterface comptroller, CToken cToken) internal returns (uint, uint) {
         // Getting comp speeds is gnarly due to not every network having the
         // split comp speeds from Proposal 62 and other networks don't even
@@ -236,21 +238,6 @@ contract CompoundLens {
             res[i] = cTokenUnderlyingPrice(cTokens[i]);
         }
         return res;
-    }
-
-    struct LodePrice {
-        address Lode;
-        uint256 LodePrice;
-    }
-
-    function lodePrice(address _comptroller, address lodeAddress) public returns (LodePrice memory) {
-        ComptrollerLensInterface comptroller = ComptrollerLensInterface(_comptroller);
-        PriceOracle priceOracle = comptroller.oracle();
-        uint256 LodeTokenPrice = priceOracle.getLodePrice(lodeAddress);
-        return LodePrice({
-            Lode: lodeAddress,
-            LodePrice: LodeTokenPrice
-        });
     }
 
     struct AccountLimits {
@@ -472,6 +459,8 @@ contract CompoundLens {
         uint accrued = comptroller.compAccrued(account);
         uint total = add(accrued, newBalance, "sum comp total");
         uint allocated = sub(total, balance, "sub allocated");
+
+        emit lodeMetaData(balance, allocated);
 
         return CompBalanceMetadataExt({
             balance: balance,
