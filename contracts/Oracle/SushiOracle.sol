@@ -39,10 +39,6 @@ contract SushiOracle is Exponential {
 
     function price () public view returns (uint256 price) {
 
-        if (tokenA != token0 || tokenB != token1 ) {
-            revert('Requested token not part of this pool');
-        }
-
         uint256 balanceA = getTokenBalance(tokenA);
         uint256 balanceB = getTokenBalance(tokenB);
 
@@ -54,7 +50,7 @@ contract SushiOracle is Exponential {
     //ADMIN FUNCTIONS
     
 
-    function _setPoolContract(address newPoolContract) public returns () {
+    function _setPoolContract(address newPoolContract) public {
         require(msg.sender == admin, "Only the admin can update the pool contract.");
 
         poolContract = newPoolContract;
@@ -63,7 +59,7 @@ contract SushiOracle is Exponential {
 
     }
 
-    function _setAdmin(address newAdmin) public returns () {
+    function _setAdmin(address newAdmin) public {
         require(msg.sender == admin, "Only the admin can update the admin");
 
         admin = newAdmin;

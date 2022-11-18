@@ -204,6 +204,7 @@ contract PriceOracleProxyETH is Exponential {
     event AggregatorUpdated(address cTokenAddress, address source, AggregatorBase base);
     event SetGuardian(address guardian);
     event SetAdmin(address admin);
+    event newLodeOracle(address newLodeOracle);
 
     /**
      * @notice Set guardian for price oracle proxy
@@ -223,6 +224,12 @@ contract PriceOracleProxyETH is Exponential {
         require(msg.sender == admin, 'only the admin may set new admin');
         admin = _admin;
         emit SetAdmin(admin);
+    }
+
+    function _setLodeOracle(address _newLodeOracle) external {
+        require(msg.sender == admin, 'only the admin may set new admin');
+        lodeOracle = _newLodeOracle;
+        emit newLodeOracle(lodeOracle);
     }
 
     /**
