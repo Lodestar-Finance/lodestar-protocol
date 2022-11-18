@@ -8,13 +8,17 @@ import './Interfaces/UniswapV2Interface.sol';
 
 contract SushiOracle is Exponential {
 
-    address public tokenA;
+    address public immutable tokenA;
 
-    address public tokenB;
+    address public immutable tokenB;
 
     address public poolContract;
 
     address public admin;
+
+    event poolContractUpdated (address newPoolContract);
+
+    event newAdmin (address newAdmin);
 
     constructor (
         address tokenA_,
@@ -27,18 +31,6 @@ contract SushiOracle is Exponential {
         poolContract = poolContract_;
     }
 
-    function getTokenAddress (uint tokenId) public view returns (address result) {
-        if (tokenId == 0) {
-            result =  IUniswapV2Pair(poolContract).token0();
-            return result;
-        }
-        else if (tokenId == 1) {
-            result = IUniswapV2Pair(poolContract).token1();
-            return result;
-        }
-
-    }
-
 
     function getTokenBalance (address tokenAddress) public view returns (uint256) {
         uint256 balance = EIP20Interface(tokenAddress).balanceOf(poolContract);
@@ -46,8 +38,6 @@ contract SushiOracle is Exponential {
     }
 
     function price () public view returns (uint256 price) {
-        address token0 = getTokenAddress(0);
-        address token1 = getTokenAddress(1);
 
         if (tokenA != token0 || tokenB != token1 ) {
             revert('Requested token not part of this pool');
@@ -64,7 +54,22 @@ contract SushiOracle is Exponential {
     //ADMIN FUNCTIONS
     
 
+    function _setPoolContract(address newPoolContract) public returns () {
+        require(msg.sender == admin, "Only the admin can update the pool contract.");
 
+        poolContract = newPoolContract;
+
+        emit newPoolContract (newPoolContract);
+
+    }
+
+    function _setAdmin(address newAdmin) public returns () {
+        require(msg.sender == admin, "Only the admin can update the admin");
+
+        admin = newAdmin;
+
+        emit newAdmin (newAdmin);
+    }
 
 
 
