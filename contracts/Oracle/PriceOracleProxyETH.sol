@@ -174,7 +174,7 @@ contract PriceOracleProxyETH is Exponential {
 
     /**
      * @notice Get price of LODE token
-     * @param tokenAddress the address of the LODE token contract
+     * @param poolAddress the address of the LODE token contract
      * @return the price of LODE in wei
      */
     function getLodePrice(address poolAddress) public view returns (uint256){

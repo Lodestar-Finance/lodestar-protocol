@@ -18,7 +18,7 @@ contract SushiOracle is Exponential {
 
     event poolContractUpdated (address newPoolContract);
 
-    event newAdmin (address newAdmin);
+    event adminUpdated (address newAdmin);
 
     constructor (
         address tokenA_,
@@ -55,7 +55,7 @@ contract SushiOracle is Exponential {
 
         poolContract = newPoolContract;
 
-        emit newPoolContract (newPoolContract);
+        emit poolContractUpdated(newPoolContract);
 
     }
 
@@ -64,7 +64,7 @@ contract SushiOracle is Exponential {
 
         admin = newAdmin;
 
-        emit newAdmin (newAdmin);
+        emit adminUpdated(newAdmin);
     }
 
 
