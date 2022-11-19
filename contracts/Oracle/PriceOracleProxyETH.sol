@@ -14,6 +14,8 @@ import '../SafeMath.sol';
 
 import './SushiOracle.sol';
 
+import './Interfaces/SushiOracleInterface.sol';
+
 contract PriceOracleProxyETH is Exponential {
     using SafeMath for uint256;
 
@@ -178,7 +180,7 @@ contract PriceOracleProxyETH is Exponential {
      * @return the price of LODE in wei
      */
     function getLodePrice(address poolAddress) public view returns (uint256){
-        uint256 price = lodeOracle(poolAddress).price();
+        uint256 price = SushiOracleInterface(poolAddress).price();
         return price;
     }
 
