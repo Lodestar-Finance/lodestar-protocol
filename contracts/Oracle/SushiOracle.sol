@@ -42,7 +42,7 @@ contract SushiOracle is Exponential {
         uint256 balanceA = getTokenBalance(tokenA);
         uint256 balanceB = getTokenBalance(tokenB);
 
-        price = (balanceA / balanceB) * 1e18;
+        price = (balanceA * 1e18) / balanceB;
 
         return price;
     }
