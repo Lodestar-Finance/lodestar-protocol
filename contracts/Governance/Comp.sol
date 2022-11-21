@@ -3,10 +3,10 @@ pragma solidity ^0.8.10;
 
 contract Comp {
     /// @notice EIP-20 token name for this token
-    string public constant name = "Lodestar Test Token";
+    string public constant name = "Lodestar";
 
     /// @notice EIP-20 token symbol for this token
-    string public constant symbol = "LTT";
+    string public constant symbol = "LODE";
 
     /// @notice EIP-20 token decimals for this token
     uint8 public constant decimals = 18;
