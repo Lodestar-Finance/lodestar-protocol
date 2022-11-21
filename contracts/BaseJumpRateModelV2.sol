@@ -21,7 +21,7 @@ abstract contract BaseJumpRateModelV2 is InterestRateModel {
     /**
      * @notice The approximate number of blocks per year that is assumed by the interest rate model
      */
-    uint public constant blocksPerYear = 31536000;
+    uint public constant blocksPerYear = 2102400;
 
     /**
      * @notice The multiplier of utilization rate that gives the slope of the interest rate

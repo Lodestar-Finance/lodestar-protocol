@@ -9,7 +9,7 @@ interface V1PriceOracleInterface {
     function assetPrices(address asset) external view returns (uint);
 }
 
-contract PriceOracleProxy is PriceOracle {
+abstract contract PriceOracleProxy is PriceOracle {
     /// @notice The v1 price oracle, which will continue to serve prices for v1 assets
     V1PriceOracleInterface public v1PriceOracle;
 

@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import "../../contracts/PriceOracle.sol";
 
-contract FixedPriceOracle is PriceOracle {
+abstract contract FixedPriceOracle is PriceOracle {
     uint public price;
 
     constructor(uint _price) {

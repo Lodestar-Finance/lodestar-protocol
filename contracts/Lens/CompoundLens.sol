@@ -65,6 +65,8 @@ contract CompoundLens {
         uint borrowCap;
     }
 
+    event lodeMetaData(uint balance, uint allocated);
+
     function getCompSpeeds(ComptrollerLensInterface comptroller, CToken cToken) internal returns (uint, uint) {
         // Getting comp speeds is gnarly due to not every network having the
         // split comp speeds from Proposal 62 and other networks don't even
@@ -116,7 +118,7 @@ contract CompoundLens {
         address underlyingAssetAddress;
         uint underlyingDecimals;
 
-        if (compareStrings(cToken.symbol(), "cETH")) {
+        if (compareStrings(cToken.symbol(), "lETH")) {
             underlyingAssetAddress = address(0);
             underlyingDecimals = 18;
         } else {
@@ -185,7 +187,7 @@ contract CompoundLens {
         uint tokenBalance;
         uint tokenAllowance;
 
-        if (compareStrings(cToken.symbol(), "cETH")) {
+        if (compareStrings(cToken.symbol(), "lETH")) {
             tokenBalance = account.balance;
             tokenAllowance = account.balance;
         } else {
@@ -457,6 +459,8 @@ contract CompoundLens {
         uint accrued = comptroller.compAccrued(account);
         uint total = add(accrued, newBalance, "sum comp total");
         uint allocated = sub(total, balance, "sub allocated");
+
+        emit lodeMetaData(balance, allocated);
 
         return CompBalanceMetadataExt({
             balance: balance,

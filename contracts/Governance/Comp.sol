@@ -3,16 +3,16 @@ pragma solidity ^0.8.10;
 
 contract Comp {
     /// @notice EIP-20 token name for this token
-    string public constant name = "Compound";
+    string public constant name = "Lodestar";
 
     /// @notice EIP-20 token symbol for this token
-    string public constant symbol = "COMP";
+    string public constant symbol = "LODE";
 
     /// @notice EIP-20 token decimals for this token
     uint8 public constant decimals = 18;
 
     /// @notice Total number of tokens in circulation
-    uint public constant totalSupply = 10000000e18; // 10 million Comp
+    uint public constant totalSupply = 20000000e18; // 20 million LODE
 
     /// @notice Allowance amounts on behalf of others
     mapping (address => mapping (address => uint96)) internal allowances;
@@ -57,7 +57,7 @@ contract Comp {
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 
     /**
-     * @notice Construct a new Comp token
+     * @notice Construct a new LODE token
      * @param account The initial account to grant all the tokens
      */
     constructor(address account) public {
