@@ -1,20 +1,20 @@
 //SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import './PriceOracle.sol';
-import './Interfaces/AggregatorV3Interface.sol';
-import './Interfaces/FlagsInterface.sol';
-import './Interfaces/V1PriceOracleInterface.sol';
-import '../CErc20.sol';
-import '../CToken.sol';
-import '../EIP20Interface.sol';
-import './Interfaces/GLPOracleInterface.sol';
-import '../Exponential.sol';
-import '../SafeMath.sol';
+import "./PriceOracle.sol";
+import "./Interfaces/AggregatorV3Interface.sol";
+import "./Interfaces/FlagsInterface.sol";
+import "./Interfaces/V1PriceOracleInterface.sol";
+import "../CErc20.sol";
+import "../CToken.sol";
+import "../EIP20Interface.sol";
+import "./Interfaces/GLPOracleInterface.sol";
+import "../Exponential.sol";
+import "../SafeMath.sol";
 
-import './SushiOracle.sol';
+import "./SushiOracle.sol";
 
-import './Interfaces/SushiOracleInterface.sol';
+import "./Interfaces/SushiOracleInterface.sol";
 
 contract PriceOracleProxyETH is Exponential {
     using SafeMath for uint256;
@@ -115,7 +115,10 @@ contract PriceOracleProxyETH is Exponential {
             return price;
         } else if (cTokenAddress == lplvGLPAddress) {
             uint256 price = getPlvGLPPrice();
-            price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
+            price = div_(
+                price,
+                Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)})
+            );
             return price;
         } else if (cTokenAddress == lLodeAddress) {
             uint256 price = getLodePrice(lodeOracle);
@@ -126,12 +129,16 @@ contract PriceOracleProxyETH is Exponential {
             if (sequencerStatus == false) {
                 // If flag is raised we shouldn't perform any critical operations
                 revert("Chainlink feeds are not being updated");
-            }
-            else if (aggregatorInfo.base == AggregatorBase.USD) {
+            } else if (aggregatorInfo.base == AggregatorBase.USD) {
                 // Convert the price to ETH based if it's USD based.
-                price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
-                uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
-                return price * 10**(18 - underlyingDecimals);
+                price = div_(
+                    price,
+                    Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)})
+                );
+                uint256 underlyingDecimals = EIP20Interface(
+                    CErc20(cTokenAddress).underlying()
+                ).decimals();
+                return price * 10 ** (18 - underlyingDecimals);
             } else if (aggregatorInfo.base == AggregatorBase.ETH) {
                 return price;
             }
@@ -146,12 +153,14 @@ contract PriceOracleProxyETH is Exponential {
      * @param aggregator The ChainLink aggregator to get the price of
      * @return The price
      */
-    function getPriceFromChainlink(AggregatorV3Interface aggregator) public view returns (uint256) {
+    function getPriceFromChainlink(
+        AggregatorV3Interface aggregator
+    ) public view returns (uint256) {
         (, int256 price, , , ) = aggregator.latestRoundData();
-        require(price > 0, 'invalid price');
+        require(price > 0, "invalid price");
 
         // Extend the decimals to 1e18.
-        return uint256(price) * 10**(18 - uint256(aggregator.decimals()));
+        return uint256(price) * 10 ** (18 - uint256(aggregator.decimals()));
     }
 
     /**
@@ -160,7 +169,7 @@ contract PriceOracleProxyETH is Exponential {
      */
     function getPlvGLPPrice() public view returns (uint256) {
         uint256 price = GLPOracleInterface(glpOracleAddress).getPlvGLPPrice();
-        require(price > 0, 'invalid price');
+        require(price > 0, "invalid price");
         return price;
     }
 
@@ -169,7 +178,9 @@ contract PriceOracleProxyETH is Exponential {
      * @param cTokenAddress The CToken address
      * @return The price
      */
-    function getPriceFromV1(address cTokenAddress) internal view returns (uint256) {
+    function getPriceFromV1(
+        address cTokenAddress
+    ) internal view returns (uint256) {
         address underlying = CErc20(cTokenAddress).underlying();
         return v1PriceOracle.assetPrices(underlying);
     }
@@ -179,7 +190,7 @@ contract PriceOracleProxyETH is Exponential {
      * @param poolAddress the address of the LODE token contract
      * @return the price of LODE in wei
      */
-    function getLodePrice(address poolAddress) public view returns (uint256){
+    function getLodePrice(address poolAddress) public view returns (uint256) {
         uint256 price = SushiOracleInterface(poolAddress).price();
         return price;
     }
@@ -189,13 +200,15 @@ contract PriceOracleProxyETH is Exponential {
      * @param sequencer the address of the Chainlink sequencer aggregator ("sequencerAddress" in constructor)
      * @return the L2 sequencer status as a boolean (true = the sequencer is up, false = the sequencer is down)
      */
-    function getSequencerStatus(address sequencer) internal view returns (bool) {
+    function getSequencerStatus(
+        address sequencer
+    ) internal view returns (bool) {
         bool status;
-        (, int256 answer, , , ) = AggregatorV3Interface(sequencer).latestRoundData();
+        (, int256 answer, , , ) = AggregatorV3Interface(sequencer)
+            .latestRoundData();
         if (answer == 0) {
             status = true;
-        }
-        else if (answer == 1) {
+        } else if (answer == 1) {
             status = false;
         }
         return status;
@@ -203,17 +216,22 @@ contract PriceOracleProxyETH is Exponential {
 
     /*** Admin or guardian functions ***/
 
-    event AggregatorUpdated(address cTokenAddress, address source, AggregatorBase base);
+    event AggregatorUpdated(
+        address cTokenAddress,
+        address source,
+        AggregatorBase base
+    );
     event SetGuardian(address guardian);
     event SetAdmin(address admin);
     event newLodeOracle(address newLodeOracle);
+    event newGlpOracle(address newGlpOracle);
 
     /**
      * @notice Set guardian for price oracle proxy
      * @param _guardian The new guardian
      */
     function _setGuardian(address _guardian) external {
-        require(msg.sender == admin, 'only the admin may set new guardian');
+        require(msg.sender == admin, "only the admin may set new guardian");
         guardian = _guardian;
         emit SetGuardian(guardian);
     }
@@ -223,15 +241,21 @@ contract PriceOracleProxyETH is Exponential {
      * @param _admin The new admin
      */
     function _setAdmin(address _admin) external {
-        require(msg.sender == admin, 'only the admin may set new admin');
+        require(msg.sender == admin, "only the admin may set new admin");
         admin = _admin;
         emit SetAdmin(admin);
     }
 
     function _setLodeOracle(address _newLodeOracle) external {
-        require(msg.sender == admin, 'only the admin may set new admin');
+        require(msg.sender == admin, "only the admin may set new admin");
         lodeOracle = _newLodeOracle;
         emit newLodeOracle(lodeOracle);
+    }
+
+    function _setGlpOracle(address _newGlpOracle) external {
+        require(msg.sender == admin, "only the admin may set new admin");
+        glpOracleAddress = _newGlpOracle;
+        emit newGlpOracle(glpOracleAddress);
     }
 
     /**
@@ -245,11 +269,21 @@ contract PriceOracleProxyETH is Exponential {
         address[] calldata sources,
         AggregatorBase[] calldata bases
     ) external {
-        require(msg.sender == admin || msg.sender == guardian, 'only the admin or guardian may set the aggregators');
-        require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, 'mismatched data');
+        require(
+            msg.sender == admin || msg.sender == guardian,
+            "only the admin or guardian may set the aggregators"
+        );
+        require(
+            cTokenAddresses.length == sources.length &&
+                cTokenAddresses.length == bases.length,
+            "mismatched data"
+        );
         for (uint256 i = 0; i < cTokenAddresses.length; i++) {
             if (sources[i] != address(0)) {
-                require(msg.sender == admin, 'Only the admin or guardian can clear the aggregators');
+                require(
+                    msg.sender == admin,
+                    "Only the admin or guardian can clear the aggregators"
+                );
             }
             aggregators[cTokenAddresses[i]] = AggregatorInfo({
                 source: AggregatorV3Interface(sources[i]),
