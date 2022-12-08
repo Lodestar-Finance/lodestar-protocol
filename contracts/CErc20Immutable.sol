@@ -28,7 +28,6 @@ contract CErc20Immutable is CErc20 {
         string memory name_,
         string memory symbol_,
         uint8 decimals_,
-        address plvGlpLooper_,
         address payable admin_
     ) {
         // Creator of the contract is admin during initialization
@@ -42,8 +41,7 @@ contract CErc20Immutable is CErc20 {
             initialExchangeRateMantissa_,
             name_,
             symbol_,
-            decimals_,
-            plvGlpLooper_
+            decimals_
         );
 
         // Set the proper admin now that initialization is done

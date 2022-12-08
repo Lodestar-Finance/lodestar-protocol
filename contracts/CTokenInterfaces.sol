@@ -44,11 +44,6 @@ contract CTokenStorage {
     address payable public pendingAdmin;
 
     /**
-     * @notice address of plvGLP looper contract
-     */
-    address public plvGlpLooper;
-
-    /**
      * @notice Contract which oversees inter-cToken operations
      */
     ComptrollerInterface public comptroller;
@@ -127,12 +122,7 @@ abstract contract CTokenInterface is CTokenStorage {
     /**
      * @notice Event emitted when interest is accrued
      */
-    event AccrueInterest(
-        uint cashPrior,
-        uint interestAccumulated,
-        uint borrowIndex,
-        uint totalBorrows
-    );
+    event AccrueInterest(uint cashPrior, uint interestAccumulated, uint borrowIndex, uint totalBorrows);
 
     /**
      * @notice Event emitted when tokens are minted
@@ -147,23 +137,12 @@ abstract contract CTokenInterface is CTokenStorage {
     /**
      * @notice Event emitted when underlying is borrowed
      */
-    event Borrow(
-        address borrower,
-        uint borrowAmount,
-        uint accountBorrows,
-        uint totalBorrows
-    );
+    event Borrow(address borrower, uint borrowAmount, uint accountBorrows, uint totalBorrows);
 
     /**
      * @notice Event emitted when a borrow is repaid
      */
-    event RepayBorrow(
-        address payer,
-        address borrower,
-        uint repayAmount,
-        uint accountBorrows,
-        uint totalBorrows
-    );
+    event RepayBorrow(address payer, address borrower, uint repayAmount, uint accountBorrows, uint totalBorrows);
 
     /**
      * @notice Event emitted when a borrow is liquidated
@@ -191,44 +170,27 @@ abstract contract CTokenInterface is CTokenStorage {
     /**
      * @notice Event emitted when comptroller is changed
      */
-    event NewComptroller(
-        ComptrollerInterface oldComptroller,
-        ComptrollerInterface newComptroller
-    );
+    event NewComptroller(ComptrollerInterface oldComptroller, ComptrollerInterface newComptroller);
 
     /**
      * @notice Event emitted when interestRateModel is changed
      */
-    event NewMarketInterestRateModel(
-        InterestRateModel oldInterestRateModel,
-        InterestRateModel newInterestRateModel
-    );
+    event NewMarketInterestRateModel(InterestRateModel oldInterestRateModel, InterestRateModel newInterestRateModel);
 
     /**
      * @notice Event emitted when the reserve factor is changed
      */
-    event NewReserveFactor(
-        uint oldReserveFactorMantissa,
-        uint newReserveFactorMantissa
-    );
+    event NewReserveFactor(uint oldReserveFactorMantissa, uint newReserveFactorMantissa);
 
     /**
      * @notice Event emitted when the reserves are added
      */
-    event ReservesAdded(
-        address benefactor,
-        uint addAmount,
-        uint newTotalReserves
-    );
+    event ReservesAdded(address benefactor, uint addAmount, uint newTotalReserves);
 
     /**
      * @notice Event emitted when the reserves are reduced
      */
-    event ReservesReduced(
-        address admin,
-        uint reduceAmount,
-        uint newTotalReserves
-    );
+    event ReservesReduced(address admin, uint reduceAmount, uint newTotalReserves);
 
     /**
      * @notice EIP20 Transfer event
@@ -244,29 +206,17 @@ abstract contract CTokenInterface is CTokenStorage {
 
     function transfer(address dst, uint amount) external virtual returns (bool);
 
-    function transferFrom(
-        address src,
-        address dst,
-        uint amount
-    ) external virtual returns (bool);
+    function transferFrom(address src, address dst, uint amount) external virtual returns (bool);
 
-    function approve(
-        address spender,
-        uint amount
-    ) external virtual returns (bool);
+    function approve(address spender, uint amount) external virtual returns (bool);
 
-    function allowance(
-        address owner,
-        address spender
-    ) external view virtual returns (uint);
+    function allowance(address owner, address spender) external view virtual returns (uint);
 
     function balanceOf(address owner) external view virtual returns (uint);
 
     function balanceOfUnderlying(address owner) external virtual returns (uint);
 
-    function getAccountSnapshot(
-        address account
-    ) external view virtual returns (uint, uint, uint, uint);
+    function getAccountSnapshot(address account) external view virtual returns (uint, uint, uint, uint);
 
     function borrowRatePerBlock() external view virtual returns (uint);
 
@@ -274,13 +224,9 @@ abstract contract CTokenInterface is CTokenStorage {
 
     function totalBorrowsCurrent() external virtual returns (uint);
 
-    function borrowBalanceCurrent(
-        address account
-    ) external virtual returns (uint);
+    function borrowBalanceCurrent(address account) external virtual returns (uint);
 
-    function borrowBalanceStored(
-        address account
-    ) external view virtual returns (uint);
+    function borrowBalanceStored(address account) external view virtual returns (uint);
 
     function exchangeRateCurrent() external virtual returns (uint);
 
@@ -290,33 +236,21 @@ abstract contract CTokenInterface is CTokenStorage {
 
     function accrueInterest() external virtual returns (uint);
 
-    function seize(
-        address liquidator,
-        address borrower,
-        uint seizeTokens
-    ) external virtual returns (uint);
+    function seize(address liquidator, address borrower, uint seizeTokens) external virtual returns (uint);
 
     /*** Admin Functions ***/
 
-    function _setPendingAdmin(
-        address payable newPendingAdmin
-    ) external virtual returns (uint);
+    function _setPendingAdmin(address payable newPendingAdmin) external virtual returns (uint);
 
     function _acceptAdmin() external virtual returns (uint);
 
-    function _setComptroller(
-        ComptrollerInterface newComptroller
-    ) external virtual returns (uint);
+    function _setComptroller(ComptrollerInterface newComptroller) external virtual returns (uint);
 
-    function _setReserveFactor(
-        uint newReserveFactorMantissa
-    ) external virtual returns (uint);
+    function _setReserveFactor(uint newReserveFactorMantissa) external virtual returns (uint);
 
     function _reduceReserves(uint reduceAmount) external virtual returns (uint);
 
-    function _setInterestRateModel(
-        InterestRateModel newInterestRateModel
-    ) external virtual returns (uint);
+    function _setInterestRateModel(InterestRateModel newInterestRateModel) external virtual returns (uint);
 }
 
 contract CErc20Storage {
@@ -333,23 +267,17 @@ abstract contract CErc20Interface is CErc20Storage {
 
     function redeem(uint redeemTokens) external virtual returns (uint);
 
-    function redeemUnderlying(
-        uint redeemAmount
-    ) external virtual returns (uint);
+    function redeemBehalf(uint redeemTokens, address redeemee) external virtual returns (uint);
+
+    function redeemUnderlying(uint redeemAmount) external virtual returns (uint);
 
     function borrow(uint borrowAmount) external virtual returns (uint);
 
-    function borrowBehalf(
-        uint borrowAmount,
-        address borrowee
-    ) external virtual returns (uint);
+    function borrowBehalf(uint borrowAmount, address borrowee) external virtual returns (uint);
 
     function repayBorrow(uint repayAmount) external virtual returns (uint);
 
-    function repayBorrowBehalf(
-        address borrower,
-        uint repayAmount
-    ) external virtual returns (uint);
+    function repayBorrowBehalf(address borrower, uint repayAmount) external virtual returns (uint);
 
     function liquidateBorrow(
         address borrower,
@@ -375,10 +303,7 @@ abstract contract CDelegatorInterface is CDelegationStorage {
     /**
      * @notice Emitted when implementation is changed
      */
-    event NewImplementation(
-        address oldImplementation,
-        address newImplementation
-    );
+    event NewImplementation(address oldImplementation, address newImplementation);
 
     /**
      * @notice Called by the admin to update the implementation of the delegator
