@@ -121,19 +121,20 @@ contract CompoundLens {
     }
 
     function cTokenMetadata(CToken cToken) public returns (CTokenMetadata memory) {
+        address cTokenAddress = address(cToken);
         uint exchangeRateCurrent = cToken.exchangeRateCurrent();
         ComptrollerLensInterface comptroller = ComptrollerLensInterface(address(cToken.comptroller()));
-        (bool isListed, uint collateralFactorMantissa) = comptroller.markets(address(cToken));
+        (bool isListed, uint collateralFactorMantissa) = comptroller.markets(cTokenAddress);
         address underlyingAssetAddress;
         uint underlyingDecimals;
-        bytes memory cTokenAddress = abi.encode(address(cToken));
+        bytes memory cTokenAddressEncoded = abi.encode(cTokenAddress);
         address comptrollerAddress = address(comptroller);
 
         if (compareStrings(cToken.symbol(), "lETH")) {
             underlyingAssetAddress = nullAddress;
             underlyingDecimals = 18;
         } else {
-            CErc20 cErc20 = CErc20(address(cToken));
+            CErc20 cErc20 = CErc20(cTokenAddress);
             underlyingAssetAddress = cErc20.underlying();
             underlyingDecimals = EIP20Interface(cErc20.underlying()).decimals();
         }
@@ -142,7 +143,7 @@ contract CompoundLens {
 
         uint borrowCap = 0;
         (bool borrowCapSuccess, bytes memory borrowCapReturnData) = comptrollerAddress.call(
-            abi.encodePacked(comptroller.borrowCaps.selector, cTokenAddress)
+            abi.encodePacked(comptroller.borrowCaps.selector, cTokenAddressEncoded)
         );
         if (borrowCapSuccess) {
             borrowCap = abi.decode(borrowCapReturnData, (uint));
@@ -150,7 +151,7 @@ contract CompoundLens {
 
         uint supplyCap = 0;
         (bool supplyCapSuccess, bytes memory supplyCapReturnData) = comptrollerAddress.call(
-            abi.encodePacked(comptroller.supplyCaps.selector, cTokenAddress)
+            abi.encodePacked(comptroller.supplyCaps.selector, cTokenAddressEncoded)
         );
         if (supplyCapSuccess) {
             supplyCap = abi.decode(supplyCapReturnData, (uint));
@@ -158,7 +159,7 @@ contract CompoundLens {
 
         return
             CTokenMetadata({
-                cToken: address(cToken),
+                cToken: cTokenAddress,
                 exchangeRateCurrent: exchangeRateCurrent,
                 supplyRatePerBlock: cToken.supplyRatePerBlock(),
                 borrowRatePerBlock: cToken.borrowRatePerBlock(),
