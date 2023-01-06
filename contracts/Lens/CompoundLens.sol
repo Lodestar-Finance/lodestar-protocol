@@ -69,6 +69,7 @@ contract CompoundLens {
         uint exchangeRateCurrent;
         uint supplyRatePerBlock;
         uint borrowRatePerBlock;
+        uint reserveFactorMantissa;
         uint totalBorrows;
         uint totalReserves;
         uint totalSupply;
@@ -124,6 +125,7 @@ contract CompoundLens {
         (bool isListed, uint collateralFactorMantissa) = comptroller.markets(address(cToken));
         address underlyingAssetAddress;
         uint underlyingDecimals;
+        bytes memory cTokenAddress = abi.encode(address(cToken));
 
         if (compareStrings(cToken.symbol(), "lETH")) {
             underlyingAssetAddress = address(0);
@@ -138,7 +140,7 @@ contract CompoundLens {
 
         uint borrowCap = 0;
         (bool borrowCapSuccess, bytes memory borrowCapReturnData) = address(comptroller).call(
-            abi.encodePacked(comptroller.borrowCaps.selector, abi.encode(address(cToken)))
+            abi.encodePacked(comptroller.borrowCaps.selector, cTokenAddress)
         );
         if (borrowCapSuccess) {
             borrowCap = abi.decode(borrowCapReturnData, (uint));
@@ -146,7 +148,7 @@ contract CompoundLens {
 
         uint supplyCap = 0;
         (bool supplyCapSuccess, bytes memory supplyCapReturnData) = address(comptroller).call(
-            abi.encodePacked(comptroller.supplyCaps.selector, abi.encode(address(cToken)))
+            abi.encodePacked(comptroller.supplyCaps.selector, cTokenAddress)
         );
         if (supplyCapSuccess) {
             supplyCap = abi.decode(supplyCapReturnData, (uint));
@@ -158,6 +160,7 @@ contract CompoundLens {
                 exchangeRateCurrent: exchangeRateCurrent,
                 supplyRatePerBlock: cToken.supplyRatePerBlock(),
                 borrowRatePerBlock: cToken.borrowRatePerBlock(),
+                reserveFactorMantissa: cToken.reserveFactorMantissa(),
                 totalBorrows: cToken.totalBorrows(),
                 totalReserves: cToken.totalReserves(),
                 totalSupply: cToken.totalSupply(),
