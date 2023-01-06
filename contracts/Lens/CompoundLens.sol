@@ -64,6 +64,7 @@ interface GovernorBravoInterface {
 }
 
 contract CompoundLens {
+    address public constant nullAddress = address(0);
     struct CTokenMetadata {
         address cToken;
         uint exchangeRateCurrent;
@@ -128,7 +129,7 @@ contract CompoundLens {
         bytes memory cTokenAddress = abi.encode(address(cToken));
 
         if (compareStrings(cToken.symbol(), "lETH")) {
-            underlyingAssetAddress = address(0);
+            underlyingAssetAddress = nullAddress;
             underlyingDecimals = 18;
         } else {
             CErc20 cErc20 = CErc20(address(cToken));
