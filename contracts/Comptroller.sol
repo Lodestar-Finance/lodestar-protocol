@@ -8,6 +8,7 @@ import "./ComptrollerInterface.sol";
 import "./ComptrollerStorage.sol";
 import "./Unitroller.sol";
 import "./Governance/Comp.sol";
+import "./CTokenInterfaces.sol";
 
 /**
  * @title Compound's Comptroller Contract
@@ -260,10 +261,14 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         }
 
         uint supplyCap = supplyCaps[cToken];
-        // Borrow cap of 0 corresponds to unlimited borrowing, totalSupply is denominated in underlying, not ctokens
+
+        uint256 exchangeRate = CTokenInterface(cToken).exchangeRateStored();
+        // Supply cap of 0 corresponds to unlimited minting, totalSupply is denominated in underlying, not ctokens
         if (supplyCap != 0) {
-            uint totalSupply = CToken(cToken).totalSupply();
-            uint nextTotalSupply = add_(totalSupply, mintAmount);
+            uint256 totalSupplyCTokens = CToken(cToken).totalSupply();
+            uint256 totalSupplyUnderlying = div_(mul_(totalSupplyCTokens, exchangeRate), 1e18);
+
+            uint256 nextTotalSupply = add_(totalSupplyUnderlying, mintAmount);
             require(nextTotalSupply < supplyCap, "market supply cap reached");
         }
 
