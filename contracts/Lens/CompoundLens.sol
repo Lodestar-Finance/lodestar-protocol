@@ -64,6 +64,7 @@ interface GovernorBravoInterface {
 }
 
 contract CompoundLens {
+    uint public constant cTokenDecimals = 8;
     struct CTokenMetadata {
         address cToken;
         uint exchangeRateCurrent;
@@ -167,7 +168,7 @@ contract CompoundLens {
                 isListed: isListed,
                 collateralFactorMantissa: collateralFactorMantissa,
                 underlyingAssetAddress: underlyingAssetAddress,
-                cTokenDecimals: cToken.decimals(),
+                cTokenDecimals: cTokenDecimals,
                 underlyingDecimals: underlyingDecimals,
                 compSupplySpeed: compSupplySpeed,
                 compBorrowSpeed: compBorrowSpeed,
@@ -239,7 +240,7 @@ contract CompoundLens {
         uint underlyingPrice;
     }
 
-    function cTokenUnderlyingPrice(CToken cToken) public returns (CTokenUnderlyingPrice memory) {
+    function cTokenUnderlyingPrice(CToken cToken) public view returns (CTokenUnderlyingPrice memory) {
         ComptrollerLensInterface comptroller = ComptrollerLensInterface(address(cToken.comptroller()));
         PriceOracle priceOracle = comptroller.oracle();
 
@@ -247,7 +248,9 @@ contract CompoundLens {
             CTokenUnderlyingPrice({cToken: address(cToken), underlyingPrice: priceOracle.getUnderlyingPrice(cToken)});
     }
 
-    function cTokenUnderlyingPriceAll(CToken[] calldata cTokens) external returns (CTokenUnderlyingPrice[] memory) {
+    function cTokenUnderlyingPriceAll(
+        CToken[] calldata cTokens
+    ) external view returns (CTokenUnderlyingPrice[] memory) {
         uint cTokenCount = cTokens.length;
         CTokenUnderlyingPrice[] memory res = new CTokenUnderlyingPrice[](cTokenCount);
         for (uint i = 0; i < cTokenCount; i++) {
@@ -265,7 +268,7 @@ contract CompoundLens {
     function getAccountLimits(
         ComptrollerLensInterface comptroller,
         address account
-    ) public returns (AccountLimits memory) {
+    ) public view returns (AccountLimits memory) {
         (uint errorCode, uint liquidity, uint shortfall) = comptroller.getAccountLiquidity(account);
         require(errorCode == 0);
 
