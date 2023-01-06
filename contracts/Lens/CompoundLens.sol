@@ -64,13 +64,11 @@ interface GovernorBravoInterface {
 }
 
 contract CompoundLens {
-    uint public constant cTokenDecimals = 8;
     struct CTokenMetadata {
         address cToken;
         uint exchangeRateCurrent;
         uint supplyRatePerBlock;
         uint borrowRatePerBlock;
-        uint reserveFactorMantissa;
         uint totalBorrows;
         uint totalReserves;
         uint totalSupply;
@@ -160,7 +158,6 @@ contract CompoundLens {
                 exchangeRateCurrent: exchangeRateCurrent,
                 supplyRatePerBlock: cToken.supplyRatePerBlock(),
                 borrowRatePerBlock: cToken.borrowRatePerBlock(),
-                reserveFactorMantissa: cToken.reserveFactorMantissa(),
                 totalBorrows: cToken.totalBorrows(),
                 totalReserves: cToken.totalReserves(),
                 totalSupply: cToken.totalSupply(),
@@ -168,7 +165,7 @@ contract CompoundLens {
                 isListed: isListed,
                 collateralFactorMantissa: collateralFactorMantissa,
                 underlyingAssetAddress: underlyingAssetAddress,
-                cTokenDecimals: cTokenDecimals,
+                cTokenDecimals: cToken.decimals(),
                 underlyingDecimals: underlyingDecimals,
                 compSupplySpeed: compSupplySpeed,
                 compBorrowSpeed: compBorrowSpeed,
