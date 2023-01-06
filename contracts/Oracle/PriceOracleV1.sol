@@ -197,11 +197,7 @@ contract CarefulMath is ErrorReporter {
     /**
      * @dev add a and b and then subtract c
      */
-    function addThenSub(
-        uint256 a,
-        uint256 b,
-        uint256 c
-    ) internal pure returns (Error, uint256) {
+    function addThenSub(uint256 a, uint256 b, uint256 c) internal pure returns (Error, uint256) {
         (Error err0, uint256 sum) = add(a, b);
 
         if (err0 != Error.NO_ERROR) {
@@ -216,7 +212,7 @@ contract Exponential is ErrorReporter, CarefulMath {
     // TODO: We may wish to put the result of 10**18 here instead of the expression.
     // Per https://solidity.readthedocs.io/en/latest/contracts.html#constant-state-variables
     // the optimizer MAY replace the expression 10**18 with its calculated value.
-    uint256 constant expScale = 10**18;
+    uint256 constant expScale = 10 ** 18;
 
     // See TODO on expScale
     uint256 constant halfExpScale = expScale / 2;
@@ -225,8 +221,8 @@ contract Exponential is ErrorReporter, CarefulMath {
         uint256 mantissa;
     }
 
-    uint256 constant mantissaOne = 10**18;
-    uint256 constant mantissaOneTenth = 10**17;
+    uint256 constant mantissaOne = 10 ** 18;
+    uint256 constant mantissaOneTenth = 10 ** 17;
 
     /**
      * @dev Creates an exponential from numerator and denominator values.
@@ -348,7 +344,7 @@ contract Exponential is ErrorReporter, CarefulMath {
      */
     function truncate(Exp memory exp) internal pure returns (uint256) {
         // Note: We are not using careful math here as we're performing a division that cannot fail
-        return exp.mantissa / 10**18;
+        return exp.mantissa / 10 ** 18;
     }
 
     /**
@@ -389,7 +385,7 @@ contract PriceOracleV1 is Exponential {
 
     uint256 public constant numBlocksPerPeriod = 240; // approximately 1 hour: 60 seconds/minute * 60 minutes/hour * 1 block/15 seconds
 
-    uint256 public constant maxSwingMantissa = (10**17); // 0.1
+    uint256 public constant maxSwingMantissa = (10 ** 17); // 0.1
 
     /**
      * @dev Mapping of asset addresses and their corresponding price in terms of Eth-Wei
@@ -399,7 +395,7 @@ contract PriceOracleV1 is Exponential {
      */
     mapping(address => Exp) public _assetPrices;
 
-    constructor(address _poster) public {
+    constructor(address _poster) {
         anchorAdmin = msg.sender;
         poster = _poster;
         maxSwing = Exp({mantissa: maxSwingMantissa});
@@ -442,11 +438,7 @@ contract PriceOracleV1 is Exponential {
      * @dev use this when reporting a known error from the price oracle or a non-upgradeable collaborator
      *      Using Oracle in name because we already inherit a `fail` function from ErrorReporter.sol via Exponential.sol
      */
-    function failOracle(
-        address asset,
-        OracleError err,
-        OracleFailureInfo info
-    ) internal returns (uint256) {
+    function failOracle(address asset, OracleError err, OracleFailureInfo info) internal returns (uint256) {
         emit OracleFailure(msg.sender, asset, uint256(err), uint256(info), 0);
 
         return uint256(err);
@@ -841,15 +833,7 @@ contract PriceOracleV1 is Exponential {
         return divExp(numerator, anchorPrice);
     }
 
-    function capToMax(Exp memory anchorPrice, Exp memory price)
-        internal
-        view
-        returns (
-            Error,
-            bool,
-            Exp memory
-        )
-    {
+    function capToMax(Exp memory anchorPrice, Exp memory price) internal view returns (Error, bool, Exp memory) {
         Exp memory one = Exp({mantissa: mantissaOne});
         Exp memory onePlusMaxSwing;
         Exp memory oneMinusMaxSwing;
@@ -901,10 +885,10 @@ contract PriceOracleV1 is Exponential {
      * @param requestedPriceMantissas requested new prices for the assets, scaled by 10**18. required: 0 < assets.length == requestedPriceMantissas.length
      * @return uint values in same order as inputs. For each: 0=success, otherwise a failure (see enum OracleError for details)
      */
-    function setPrices(address[] memory assets, uint256[] memory requestedPriceMantissas)
-        public
-        returns (uint256[] memory)
-    {
+    function setPrices(
+        address[] memory assets,
+        uint256[] memory requestedPriceMantissas
+    ) public returns (uint256[] memory) {
         uint256 numAssets = assets.length;
         uint256 numPrices = requestedPriceMantissas.length;
         uint256[] memory result;

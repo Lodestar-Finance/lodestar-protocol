@@ -10,15 +10,26 @@ import "../Governance/Comp.sol";
 
 interface ComptrollerLensInterface {
     function markets(address) external view returns (bool, uint);
+
     function oracle() external view returns (PriceOracle);
+
     function getAccountLiquidity(address) external view returns (uint, uint, uint);
+
     function getAssetsIn(address) external view returns (CToken[] memory);
+
     function claimComp(address) external;
+
     function compAccrued(address) external view returns (uint);
+
     function compSpeeds(address) external view returns (uint);
+
     function compSupplySpeeds(address) external view returns (uint);
+
     function compBorrowSpeeds(address) external view returns (uint);
+
     function borrowCaps(address) external view returns (uint);
+
+    function supplyCaps(address) external view returns (uint);
 }
 
 interface GovernorBravoInterface {
@@ -39,8 +50,16 @@ interface GovernorBravoInterface {
         bool canceled;
         bool executed;
     }
-    function getActions(uint proposalId) external view returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas);
+
+    function getActions(
+        uint proposalId
+    )
+        external
+        view
+        returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas);
+
     function proposals(uint proposalId) external view returns (Proposal memory);
+
     function getReceipt(uint proposalId, address voter) external view returns (Receipt memory);
 }
 
@@ -63,6 +82,7 @@ contract CompoundLens {
         uint compSupplySpeed;
         uint compBorrowSpeed;
         uint borrowCap;
+        uint supplyCap;
     }
 
     event lodeMetaData(uint balance, uint allocated);
@@ -72,37 +92,25 @@ contract CompoundLens {
         // split comp speeds from Proposal 62 and other networks don't even
         // have comp speeds.
         uint compSupplySpeed = 0;
-        (bool compSupplySpeedSuccess, bytes memory compSupplySpeedReturnData) =
-            address(comptroller).call(
-                abi.encodePacked(
-                    comptroller.compSupplySpeeds.selector,
-                    abi.encode(address(cToken))
-                )
-            );
+        (bool compSupplySpeedSuccess, bytes memory compSupplySpeedReturnData) = address(comptroller).call(
+            abi.encodePacked(comptroller.compSupplySpeeds.selector, abi.encode(address(cToken)))
+        );
         if (compSupplySpeedSuccess) {
             compSupplySpeed = abi.decode(compSupplySpeedReturnData, (uint));
         }
 
         uint compBorrowSpeed = 0;
-        (bool compBorrowSpeedSuccess, bytes memory compBorrowSpeedReturnData) =
-            address(comptroller).call(
-                abi.encodePacked(
-                    comptroller.compBorrowSpeeds.selector,
-                    abi.encode(address(cToken))
-                )
-            );
+        (bool compBorrowSpeedSuccess, bytes memory compBorrowSpeedReturnData) = address(comptroller).call(
+            abi.encodePacked(comptroller.compBorrowSpeeds.selector, abi.encode(address(cToken)))
+        );
         if (compBorrowSpeedSuccess) {
             compBorrowSpeed = abi.decode(compBorrowSpeedReturnData, (uint));
         }
 
         // If the split comp speeds call doesn't work, try the  oldest non-spit version.
         if (!compSupplySpeedSuccess || !compBorrowSpeedSuccess) {
-            (bool compSpeedSuccess, bytes memory compSpeedReturnData) =
-            address(comptroller).call(
-                abi.encodePacked(
-                    comptroller.compSpeeds.selector,
-                    abi.encode(address(cToken))
-                )
+            (bool compSpeedSuccess, bytes memory compSpeedReturnData) = address(comptroller).call(
+                abi.encodePacked(comptroller.compSpeeds.selector, abi.encode(address(cToken)))
             );
             if (compSpeedSuccess) {
                 compSupplySpeed = compBorrowSpeed = abi.decode(compSpeedReturnData, (uint));
@@ -130,36 +138,42 @@ contract CompoundLens {
         (uint compSupplySpeed, uint compBorrowSpeed) = getCompSpeeds(comptroller, cToken);
 
         uint borrowCap = 0;
-        (bool borrowCapSuccess, bytes memory borrowCapReturnData) =
-            address(comptroller).call(
-                abi.encodePacked(
-                    comptroller.borrowCaps.selector,
-                    abi.encode(address(cToken))
-                )
-            );
+        (bool borrowCapSuccess, bytes memory borrowCapReturnData) = address(comptroller).call(
+            abi.encodePacked(comptroller.borrowCaps.selector, abi.encode(address(cToken)))
+        );
         if (borrowCapSuccess) {
             borrowCap = abi.decode(borrowCapReturnData, (uint));
         }
 
-        return CTokenMetadata({
-            cToken: address(cToken),
-            exchangeRateCurrent: exchangeRateCurrent,
-            supplyRatePerBlock: cToken.supplyRatePerBlock(),
-            borrowRatePerBlock: cToken.borrowRatePerBlock(),
-            reserveFactorMantissa: cToken.reserveFactorMantissa(),
-            totalBorrows: cToken.totalBorrows(),
-            totalReserves: cToken.totalReserves(),
-            totalSupply: cToken.totalSupply(),
-            totalCash: cToken.getCash(),
-            isListed: isListed,
-            collateralFactorMantissa: collateralFactorMantissa,
-            underlyingAssetAddress: underlyingAssetAddress,
-            cTokenDecimals: cToken.decimals(),
-            underlyingDecimals: underlyingDecimals,
-            compSupplySpeed: compSupplySpeed,
-            compBorrowSpeed: compBorrowSpeed,
-            borrowCap: borrowCap
-        });
+        uint supplyCap = 0;
+        (bool supplyCapSuccess, bytes memory supplyCapReturnData) = address(comptroller).call(
+            abi.encodePacked(comptroller.supplyCaps.selector, abi.encode(address(cToken)))
+        );
+        if (supplyCapSuccess) {
+            supplyCap = abi.decode(supplyCapReturnData, (uint));
+        }
+
+        return
+            CTokenMetadata({
+                cToken: address(cToken),
+                exchangeRateCurrent: exchangeRateCurrent,
+                supplyRatePerBlock: cToken.supplyRatePerBlock(),
+                borrowRatePerBlock: cToken.borrowRatePerBlock(),
+                reserveFactorMantissa: cToken.reserveFactorMantissa(),
+                totalBorrows: cToken.totalBorrows(),
+                totalReserves: cToken.totalReserves(),
+                totalSupply: cToken.totalSupply(),
+                totalCash: cToken.getCash(),
+                isListed: isListed,
+                collateralFactorMantissa: collateralFactorMantissa,
+                underlyingAssetAddress: underlyingAssetAddress,
+                cTokenDecimals: cToken.decimals(),
+                underlyingDecimals: underlyingDecimals,
+                compSupplySpeed: compSupplySpeed,
+                compBorrowSpeed: compBorrowSpeed,
+                borrowCap: borrowCap,
+                supplyCap: supplyCap
+            });
     }
 
     function cTokenMetadataAll(CToken[] calldata cTokens) external returns (CTokenMetadata[] memory) {
@@ -197,17 +211,21 @@ contract CompoundLens {
             tokenAllowance = underlying.allowance(account, address(cToken));
         }
 
-        return CTokenBalances({
-            cToken: address(cToken),
-            balanceOf: balanceOf,
-            borrowBalanceCurrent: borrowBalanceCurrent,
-            balanceOfUnderlying: balanceOfUnderlying,
-            tokenBalance: tokenBalance,
-            tokenAllowance: tokenAllowance
-        });
+        return
+            CTokenBalances({
+                cToken: address(cToken),
+                balanceOf: balanceOf,
+                borrowBalanceCurrent: borrowBalanceCurrent,
+                balanceOfUnderlying: balanceOfUnderlying,
+                tokenBalance: tokenBalance,
+                tokenAllowance: tokenAllowance
+            });
     }
 
-    function cTokenBalancesAll(CToken[] calldata cTokens, address payable account) external returns (CTokenBalances[] memory) {
+    function cTokenBalancesAll(
+        CToken[] calldata cTokens,
+        address payable account
+    ) external returns (CTokenBalances[] memory) {
         uint cTokenCount = cTokens.length;
         CTokenBalances[] memory res = new CTokenBalances[](cTokenCount);
         for (uint i = 0; i < cTokenCount; i++) {
@@ -225,10 +243,8 @@ contract CompoundLens {
         ComptrollerLensInterface comptroller = ComptrollerLensInterface(address(cToken.comptroller()));
         PriceOracle priceOracle = comptroller.oracle();
 
-        return CTokenUnderlyingPrice({
-            cToken: address(cToken),
-            underlyingPrice: priceOracle.getUnderlyingPrice(cToken)
-        });
+        return
+            CTokenUnderlyingPrice({cToken: address(cToken), underlyingPrice: priceOracle.getUnderlyingPrice(cToken)});
     }
 
     function cTokenUnderlyingPriceAll(CToken[] calldata cTokens) external returns (CTokenUnderlyingPrice[] memory) {
@@ -246,15 +262,14 @@ contract CompoundLens {
         uint shortfall;
     }
 
-    function getAccountLimits(ComptrollerLensInterface comptroller, address account) public returns (AccountLimits memory) {
+    function getAccountLimits(
+        ComptrollerLensInterface comptroller,
+        address account
+    ) public returns (AccountLimits memory) {
         (uint errorCode, uint liquidity, uint shortfall) = comptroller.getAccountLiquidity(account);
         require(errorCode == 0);
 
-        return AccountLimits({
-            markets: comptroller.getAssetsIn(account),
-            liquidity: liquidity,
-            shortfall: shortfall
-        });
+        return AccountLimits({markets: comptroller.getAssetsIn(account), liquidity: liquidity, shortfall: shortfall});
     }
 
     struct GovReceipt {
@@ -264,7 +279,11 @@ contract CompoundLens {
         uint96 votes;
     }
 
-    function getGovReceipts(GovernorAlpha governor, address voter, uint[] memory proposalIds) public view returns (GovReceipt[] memory) {
+    function getGovReceipts(
+        GovernorAlpha governor,
+        address voter,
+        uint[] memory proposalIds
+    ) public view returns (GovReceipt[] memory) {
         uint proposalCount = proposalIds.length;
         GovReceipt[] memory res = new GovReceipt[](proposalCount);
         for (uint i = 0; i < proposalCount; i++) {
@@ -286,7 +305,11 @@ contract CompoundLens {
         uint96 votes;
     }
 
-    function getGovBravoReceipts(GovernorBravoInterface governor, address voter, uint[] memory proposalIds) public view returns (GovBravoReceipt[] memory) {
+    function getGovBravoReceipts(
+        GovernorBravoInterface governor,
+        address voter,
+        uint[] memory proposalIds
+    ) public view returns (GovBravoReceipt[] memory) {
         uint proposalCount = proposalIds.length;
         GovBravoReceipt[] memory res = new GovBravoReceipt[](proposalCount);
         for (uint i = 0; i < proposalCount; i++) {
@@ -340,7 +363,10 @@ contract CompoundLens {
         res.executed = executed;
     }
 
-    function getGovProposals(GovernorAlpha governor, uint[] calldata proposalIds) external view returns (GovProposal[] memory) {
+    function getGovProposals(
+        GovernorAlpha governor,
+        uint[] calldata proposalIds
+    ) external view returns (GovProposal[] memory) {
         GovProposal[] memory res = new GovProposal[](proposalIds.length);
         for (uint i = 0; i < proposalIds.length; i++) {
             (
@@ -386,7 +412,11 @@ contract CompoundLens {
         bool executed;
     }
 
-    function setBravoProposal(GovBravoProposal memory res, GovernorBravoInterface governor, uint proposalId) internal view {
+    function setBravoProposal(
+        GovBravoProposal memory res,
+        GovernorBravoInterface governor,
+        uint proposalId
+    ) internal view {
         GovernorBravoInterface.Proposal memory p = governor.proposals(proposalId);
 
         res.proposalId = proposalId;
@@ -401,7 +431,10 @@ contract CompoundLens {
         res.executed = p.executed;
     }
 
-    function getGovBravoProposals(GovernorBravoInterface governor, uint[] calldata proposalIds) external view returns (GovBravoProposal[] memory) {
+    function getGovBravoProposals(
+        GovernorBravoInterface governor,
+        uint[] calldata proposalIds
+    ) external view returns (GovBravoProposal[] memory) {
         GovBravoProposal[] memory res = new GovBravoProposal[](proposalIds.length);
         for (uint i = 0; i < proposalIds.length; i++) {
             (
@@ -438,11 +471,12 @@ contract CompoundLens {
     }
 
     function getCompBalanceMetadata(Comp comp, address account) external view returns (CompBalanceMetadata memory) {
-        return CompBalanceMetadata({
-            balance: comp.balanceOf(account),
-            votes: uint256(comp.getCurrentVotes(account)),
-            delegate: comp.delegates(account)
-        });
+        return
+            CompBalanceMetadata({
+                balance: comp.balanceOf(account),
+                votes: uint256(comp.getCurrentVotes(account)),
+                delegate: comp.delegates(account)
+            });
     }
 
     struct CompBalanceMetadataExt {
@@ -452,7 +486,11 @@ contract CompoundLens {
         uint allocated;
     }
 
-    function getCompBalanceMetadataExt(Comp comp, ComptrollerLensInterface comptroller, address account) external returns (CompBalanceMetadataExt memory) {
+    function getCompBalanceMetadataExt(
+        Comp comp,
+        ComptrollerLensInterface comptroller,
+        address account
+    ) external returns (CompBalanceMetadataExt memory) {
         uint balance = comp.balanceOf(account);
         comptroller.claimComp(account);
         uint newBalance = comp.balanceOf(account);
@@ -462,12 +500,13 @@ contract CompoundLens {
 
         emit lodeMetaData(balance, allocated);
 
-        return CompBalanceMetadataExt({
-            balance: balance,
-            votes: uint256(comp.getCurrentVotes(account)),
-            delegate: comp.delegates(account),
-            allocated: allocated
-        });
+        return
+            CompBalanceMetadataExt({
+                balance: balance,
+                votes: uint256(comp.getCurrentVotes(account)),
+                delegate: comp.delegates(account),
+                allocated: allocated
+            });
     }
 
     struct CompVotes {
@@ -475,7 +514,11 @@ contract CompoundLens {
         uint votes;
     }
 
-    function getCompVotes(Comp comp, address account, uint32[] calldata blockNumbers) external view returns (CompVotes[] memory) {
+    function getCompVotes(
+        Comp comp,
+        address account,
+        uint32[] calldata blockNumbers
+    ) external view returns (CompVotes[] memory) {
         CompVotes[] memory res = new CompVotes[](blockNumbers.length);
         for (uint i = 0; i < blockNumbers.length; i++) {
             res[i] = CompVotes({
