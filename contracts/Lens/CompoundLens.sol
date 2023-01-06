@@ -120,46 +120,53 @@ contract CompoundLens {
         return (compSupplySpeed, compBorrowSpeed);
     }
 
-    function cTokenMetadata(CToken cToken) public returns (CTokenMetadata memory) {
-        address cTokenAddress = address(cToken);
-        uint exchangeRateCurrent = cToken.exchangeRateCurrent();
-        ComptrollerLensInterface comptroller = ComptrollerLensInterface(address(cToken.comptroller()));
-        (bool isListed, uint collateralFactorMantissa) = comptroller.markets(cTokenAddress);
-        address underlyingAssetAddress;
-        uint underlyingDecimals;
-        bytes memory cTokenAddressEncoded = abi.encode(cTokenAddress);
-        address comptrollerAddress = address(comptroller);
-
-        if (compareStrings(cToken.symbol(), "lETH")) {
-            underlyingAssetAddress = nullAddress;
-            underlyingDecimals = 18;
-        } else {
-            CErc20 cErc20 = CErc20(cTokenAddress);
-            underlyingAssetAddress = cErc20.underlying();
-            underlyingDecimals = EIP20Interface(cErc20.underlying()).decimals();
-        }
-
-        (uint compSupplySpeed, uint compBorrowSpeed) = getCompSpeeds(comptroller, cToken);
-
+    function getMarketCaps(ComptrollerLensInterface comptroller, CToken cToken) internal returns (uint, uint) {
+        // Getting comp speeds is gnarly due to not every network having the
+        // split comp speeds from Proposal 62 and other networks don't even
+        // have comp speeds.
         uint borrowCap = 0;
-        (bool borrowCapSuccess, bytes memory borrowCapReturnData) = comptrollerAddress.call(
-            abi.encodePacked(comptroller.borrowCaps.selector, cTokenAddressEncoded)
+        (bool borrowCapSuccess, bytes memory borrowCapReturnData) = comptroller.call(
+            abi.encodePacked(comptroller.borrowCaps.selector, address(cToken))
         );
         if (borrowCapSuccess) {
             borrowCap = abi.decode(borrowCapReturnData, (uint));
         }
 
         uint supplyCap = 0;
-        (bool supplyCapSuccess, bytes memory supplyCapReturnData) = comptrollerAddress.call(
-            abi.encodePacked(comptroller.supplyCaps.selector, cTokenAddressEncoded)
+        (bool supplyCapSuccess, bytes memory supplyCapReturnData) = comptroller.call(
+            abi.encodePacked(comptroller.supplyCaps.selector, address(cToken))
         );
         if (supplyCapSuccess) {
             supplyCap = abi.decode(supplyCapReturnData, (uint));
         }
+        return (borrowCap, supplyCap);
+    }
+
+    function cTokenMetadata(CToken cToken) public returns (CTokenMetadata memory) {
+        uint exchangeRateCurrent = cToken.exchangeRateCurrent();
+        ComptrollerLensInterface comptroller = ComptrollerLensInterface(address(cToken.comptroller()));
+        (bool isListed, uint collateralFactorMantissa) = comptroller.markets(address(cToken));
+        address underlyingAssetAddress;
+        uint underlyingDecimals;
+        bytes memory cTokenAddress = abi.encode(address(cToken));
+        address comptrollerAddress = address(comptroller);
+
+        if (compareStrings(cToken.symbol(), "lETH")) {
+            underlyingAssetAddress = nullAddress;
+            underlyingDecimals = 18;
+        } else {
+            CErc20 cErc20 = CErc20(address(cToken));
+            underlyingAssetAddress = cErc20.underlying();
+            underlyingDecimals = EIP20Interface(cErc20.underlying()).decimals();
+        }
+
+        (uint compSupplySpeed, uint compBorrowSpeed) = getCompSpeeds(comptroller, cToken);
+
+        (uint borrowCap, uint supplyCap) = getMarketCaps(comptroller, cToken);
 
         return
             CTokenMetadata({
-                cToken: cTokenAddress,
+                cToken: address(cToken),
                 exchangeRateCurrent: exchangeRateCurrent,
                 supplyRatePerBlock: cToken.supplyRatePerBlock(),
                 borrowRatePerBlock: cToken.borrowRatePerBlock(),
