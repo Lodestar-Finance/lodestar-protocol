@@ -125,7 +125,7 @@ contract CompoundLens {
         // split comp speeds from Proposal 62 and other networks don't even
         // have comp speeds.
         uint borrowCap = 0;
-        (bool borrowCapSuccess, bytes memory borrowCapReturnData) = comptroller.call(
+        (bool borrowCapSuccess, bytes memory borrowCapReturnData) = address(comptroller).call(
             abi.encodePacked(comptroller.borrowCaps.selector, address(cToken))
         );
         if (borrowCapSuccess) {
@@ -133,7 +133,7 @@ contract CompoundLens {
         }
 
         uint supplyCap = 0;
-        (bool supplyCapSuccess, bytes memory supplyCapReturnData) = comptroller.call(
+        (bool supplyCapSuccess, bytes memory supplyCapReturnData) = address(comptroller).call(
             abi.encodePacked(comptroller.supplyCaps.selector, address(cToken))
         );
         if (supplyCapSuccess) {
@@ -148,8 +148,6 @@ contract CompoundLens {
         (bool isListed, uint collateralFactorMantissa) = comptroller.markets(address(cToken));
         address underlyingAssetAddress;
         uint underlyingDecimals;
-        bytes memory cTokenAddress = abi.encode(address(cToken));
-        address comptrollerAddress = address(comptroller);
 
         if (compareStrings(cToken.symbol(), "lETH")) {
             underlyingAssetAddress = nullAddress;
