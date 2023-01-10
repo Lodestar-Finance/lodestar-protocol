@@ -395,9 +395,8 @@ contract PriceOracleV1 is Exponential {
      */
     mapping(address => Exp) public _assetPrices;
 
-    constructor(address _poster) {
+    constructor() {
         anchorAdmin = msg.sender;
-        poster = _poster;
         maxSwing = Exp({mantissa: maxSwingMantissa});
     }
 
@@ -425,7 +424,8 @@ contract PriceOracleV1 is Exponential {
         SET_PRICE_NO_ANCHOR_PRICE_OR_INITIAL_PRICE_ZERO,
         SET_PRICE_PERMISSION_CHECK,
         SET_PRICE_ZERO_PRICE,
-        SET_PRICES_PARAM_VALIDATION
+        SET_PRICES_PARAM_VALIDATION,
+        SET_POSTER_OWNER_CHECK
     }
 
     /**
@@ -471,7 +471,7 @@ contract PriceOracleV1 is Exponential {
 
     /**
      * @dev Address of the price poster.
-     *      Set in the constructor.
+     *      Set by admin function.
      */
     address public poster;
 
@@ -552,6 +552,8 @@ contract PriceOracleV1 is Exponential {
      */
     event SetPaused(bool newState);
 
+    event NewPoster(address oldPoster, address newPoster);
+
     /**
      * @dev emitted when pendingAnchorAdmin is changed
      */
@@ -576,6 +578,20 @@ contract PriceOracleV1 is Exponential {
 
         paused = requestedState;
         emit SetPaused(requestedState);
+
+        return uint256(Error.NO_ERROR);
+    }
+
+    function _setPoster(address newPoster) public returns (uint256) {
+        // Check caller = anchorAdmin
+        if (msg.sender != anchorAdmin) {
+            return failOracle(address(0), OracleError.UNAUTHORIZED, OracleFailureInfo.SET_PAUSED_OWNER_CHECK);
+        }
+        address oldPoster = poster;
+
+        poster = newPoster;
+
+        emit NewPoster(oldPoster, newPoster);
 
         return uint256(Error.NO_ERROR);
     }
