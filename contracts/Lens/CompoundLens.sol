@@ -252,9 +252,9 @@ contract CompoundLens {
         ComptrollerLensInterface comptroller = ComptrollerLensInterface(address(cToken.comptroller()));
         PriceOracle priceOracle = comptroller.oracle();
 
-        uint256 underlyingPrice;
+        uint underlyingPrice;
         (bool priceSuccess, bytes memory priceReturnData) = address(priceOracle).call(
-            abi.encodePacked(priceOracle.getUnderlyingPrice.selector, cToken)
+            abi.encodePacked(priceOracle.getUnderlyingPrice.selector, address(cToken))
         );
         if (priceSuccess) {
             underlyingPrice = abi.decode(priceReturnData, (uint));
