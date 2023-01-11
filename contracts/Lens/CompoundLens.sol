@@ -248,17 +248,22 @@ contract CompoundLens {
         uint underlyingPrice;
     }
 
-    function cTokenUnderlyingPrice(CToken cToken) public view returns (CTokenUnderlyingPrice memory) {
+    function cTokenUnderlyingPrice(CToken cToken) public returns (CTokenUnderlyingPrice memory) {
         ComptrollerLensInterface comptroller = ComptrollerLensInterface(address(cToken.comptroller()));
         PriceOracle priceOracle = comptroller.oracle();
 
-        return
-            CTokenUnderlyingPrice({cToken: address(cToken), underlyingPrice: priceOracle.getUnderlyingPrice(cToken)});
+        uint256 underlyingPrice = 0;
+        (bool priceSuccess, bytes memory priceReturnData) = address(priceOracle).call(
+            abi.encodePacked(priceOracle.getUnderlyingPrice.selector, address(cToken))
+        );
+        if (priceSuccess) {
+            underlyingPrice = abi.decode(priceReturnData, (uint256));
+        }
+
+        return CTokenUnderlyingPrice({cToken: address(cToken), underlyingPrice: underlyingPrice});
     }
 
-    function cTokenUnderlyingPriceAll(
-        CToken[] calldata cTokens
-    ) external view returns (CTokenUnderlyingPrice[] memory) {
+    function cTokenUnderlyingPriceAll(CToken[] calldata cTokens) external returns (CTokenUnderlyingPrice[] memory) {
         uint cTokenCount = cTokens.length;
         CTokenUnderlyingPrice[] memory res = new CTokenUnderlyingPrice[](cTokenCount);
         for (uint i = 0; i < cTokenCount; i++) {
