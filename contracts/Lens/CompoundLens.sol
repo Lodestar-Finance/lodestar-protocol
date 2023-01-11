@@ -254,7 +254,7 @@ contract CompoundLens {
 
         uint256 underlyingPrice = 0;
         (bool priceSuccess, bytes memory priceReturnData) = address(priceOracle).call(
-            abi.encodePacked(priceOracle.getUnderlyingPrice.selector, address(cToken))
+            abi.encodePacked(priceOracle.getUnderlyingPrice.selector, cToken)
         );
         if (priceSuccess) {
             underlyingPrice = abi.decode(priceReturnData, (uint256));
