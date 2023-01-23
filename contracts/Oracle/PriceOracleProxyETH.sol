@@ -61,9 +61,6 @@ contract PriceOracleProxyETH is Exponential {
     /// @notice Chainlink Aggregators
     mapping(address => AggregatorInfo) public aggregators;
 
-    /// @notice The v1 price oracle
-    V1PriceOracleInterface public v1PriceOracle;
-
     /// @notice The ETH-USD aggregator address
     AggregatorV3Interface public ethUsdAggregator;
 
