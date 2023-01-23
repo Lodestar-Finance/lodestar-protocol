@@ -1,7 +1,10 @@
+// SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-interface GLPOracleInterface {
-    function getGLPPrice() external view returns (uint256);
+abstract contract GLPOracleInterface {
+    bool public constant isGLPOracle = true;
 
-    function getPlvGLPPrice() external view returns (uint256);
+    function getGLPPrice() external view virtual returns (uint256);
+
+    function getPlvGLPPrice() external view virtual returns (uint256);
 }

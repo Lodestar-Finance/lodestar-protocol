@@ -6,6 +6,8 @@ import "../Exponential.sol";
 import "./Interfaces/UniswapV2Interface.sol";
 
 contract SushiOracle is Exponential {
+    bool public constant isSushiOracle = true;
+
     address public immutable tokenA;
 
     address public immutable tokenB;

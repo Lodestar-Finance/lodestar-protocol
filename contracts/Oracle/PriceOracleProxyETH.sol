@@ -51,8 +51,6 @@ contract PriceOracleProxyETH is Exponential {
 
     uint256 lodePrice;
 
-    uint256 anchorPrice;
-
     struct AggregatorInfo {
         /// @notice The source address of the aggregator
         AggregatorV3Interface source;
@@ -63,12 +61,6 @@ contract PriceOracleProxyETH is Exponential {
     /// @notice Chainlink Aggregators
     mapping(address => AggregatorInfo) public aggregators;
 
-    mapping(address => Exp) public anchorPrices;
-
-    mapping(CToken => bool) public isInitialized;
-
-    mapping(CToken => uint256) public prices;
-
     /// @notice The v1 price oracle
     V1PriceOracleInterface public v1PriceOracle;
 
@@ -77,7 +69,6 @@ contract PriceOracleProxyETH is Exponential {
 
     /**
      * @param admin_ The address of admin to set aggregators
-     * @param v1PriceOracle_ The v1 price oracle
      * @param ethUsdAggregator_ the address of the ETH/USD Chainlink aggregator
      * @param sequencerAddress_ the address of the Chainlink L2 sequencer aggregator
      * @param letherAddress_ the address of the Ether cToken
@@ -88,7 +79,6 @@ contract PriceOracleProxyETH is Exponential {
      */
     constructor(
         address admin_,
-        address v1PriceOracle_,
         address ethUsdAggregator_,
         address sequencerAddress_,
         address letherAddress_,
@@ -98,7 +88,6 @@ contract PriceOracleProxyETH is Exponential {
         address lodeOracle_
     ) {
         admin = admin_;
-        v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
         sequencerAddress = sequencerAddress_;
         letherAddress = letherAddress_;
@@ -113,7 +102,7 @@ contract PriceOracleProxyETH is Exponential {
      * @param cToken The cToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getAssetPrice(CToken cToken) public view returns (uint256) {
+    function getUnderlyingPrice(CToken cToken) public view returns (uint256) {
         address cTokenAddress = address(cToken);
         AggregatorInfo memory aggregatorInfo = aggregators[cTokenAddress];
         if (cTokenAddress == letherAddress) {
@@ -141,22 +130,7 @@ contract PriceOracleProxyETH is Exponential {
                 return price;
             }
         }
-        return getPriceFromV1(cTokenAddress);
-    }
-
-    function setUnderlyingPrice(CToken lToken) internal {
-        require(isInitialized[lToken], "Asset not initialized");
-        uint256 assetPrice = getAssetPrice(lToken);
-        address lTokenAddress = address(lToken);
-        require(v1PriceOracle.setPrice(lTokenAddress, assetPrice) == 0, "Set Price Failure");
-        uint256 price = getPriceFromV1(lTokenAddress);
-        prices[lToken] = price;
-    }
-
-    function getUnderlyingPrice(CToken lToken) public returns (uint256) {
-        setUnderlyingPrice(lToken);
-        uint256 price = prices[lToken];
-        return price;
+        revert("Invalid Oracle Request");
     }
 
     /*** Internal functions ***/
@@ -182,16 +156,6 @@ contract PriceOracleProxyETH is Exponential {
         uint256 price = GLPOracleInterface(glpOracleAddress).getPlvGLPPrice();
         require(price > 0, "invalid price");
         return price;
-    }
-
-    /**
-     * @notice Get price from v1 price oracle
-     * @param cTokenAddress The CToken address
-     * @return The price
-     */
-    function getPriceFromV1(address cTokenAddress) internal view returns (uint256) {
-        address underlying = CErc20(cTokenAddress).underlying();
-        return v1PriceOracle.assetPrices(underlying);
     }
 
     /**
@@ -227,21 +191,6 @@ contract PriceOracleProxyETH is Exponential {
     event SetAdmin(address admin);
     event newLodeOracle(address newLodeOracle);
     event newGlpOracle(address newGlpOracle);
-    event assetInitialized(address lToken, uint256 initialPrice);
-
-    function _initializeAssetInternal(CToken lToken) internal {
-        uint256 initialPrice = getAssetPrice(lToken);
-        require(v1PriceOracle.setPrice(address(lToken), initialPrice) == 0, "Set Price Failed");
-        isInitialized[lToken] = true;
-        emit assetInitialized(address(lToken), initialPrice);
-    }
-
-    function _initializeAssets(CToken[] memory lTokens) external {
-        require(msg.sender == admin, "Only the admin can initialize assets");
-        for (uint i; i < lTokens.length; i++) {
-            _initializeAssetInternal(lTokens[i]);
-        }
-    }
 
     /**
      * @notice Set guardian for price oracle proxy
@@ -263,15 +212,25 @@ contract PriceOracleProxyETH is Exponential {
         emit SetAdmin(admin);
     }
 
-    function _setLodeOracle(address _newLodeOracle) external {
+    /**
+     * @notice Set guardian for price oracle proxy
+     * @param _newLodeOracle The new LODE oracle contract
+     */
+    function _setLodeOracle(SushiOracleInterface _newLodeOracle) external {
         require(msg.sender == admin, "only the admin may set new LODE Oracle");
-        lodeOracle = _newLodeOracle;
+        require(_newLodeOracle.isSushiOracle(), "Invalid Contract");
+        lodeOracle = address(_newLodeOracle);
         emit newLodeOracle(lodeOracle);
     }
 
-    function _setGlpOracle(address _newGlpOracle) external {
+    /**
+     * @notice Set guardian for price oracle proxy
+     * @param _newGlpOracle The new LODE oracle contract
+     */
+    function _setGlpOracle(GLPOracleInterface _newGlpOracle) external {
         require(msg.sender == admin, "only the admin may set new GLP Oracle");
-        glpOracleAddress = _newGlpOracle;
+        require(_newGlpOracle.isGLPOracle(), "Invalid Contract");
+        glpOracleAddress = address(_newGlpOracle);
         emit newGlpOracle(glpOracleAddress);
     }
 

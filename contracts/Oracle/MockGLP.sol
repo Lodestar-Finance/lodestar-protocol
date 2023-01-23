@@ -1,34 +1,30 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //This contract mocks the necessary functions for the GLPOracle for testing purposes only
-
 pragma solidity ^0.8.10;
 
 contract MockGLP {
-
     address public GLP;
 
     address public GLPManager;
-    
 
     //address public admin = msg.sender;
 
-    function setGLPAddress (address _GLP) public returns (address) {
+    function setGLPAddress(address _GLP) public returns (address) {
         GLP = _GLP;
         return GLP;
     }
 
-    function setGLPManager (address _GLPManager) public returns (address) {
+    function setGLPManager(address _GLPManager) public returns (address) {
         GLPManager = _GLPManager;
         return GLPManager;
     }
 
     function getAum(bool maximise) public view returns (uint256) {
-
         uint256 aum;
 
-        if(maximise == false) {
+        if (maximise == false) {
             aum = 289751348156355989840954443190634393128;
-        }
-        else {
+        } else {
             aum = 0;
         }
         return aum;

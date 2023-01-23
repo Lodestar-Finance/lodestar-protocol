@@ -1,13 +1,11 @@
+// SPDX-License-Identifier: BSD-3-Clause
 //this contract mocks the necessary functions behind plvGLP and is for testing purposes ONLY
-
 pragma solidity ^0.8.10;
 
 contract MockPlvGLP {
-
     address plvGLP;
 
-
-    function setPlvGLPAddress (address _plvGLP) public returns (address) {
+    function setPlvGLPAddress(address _plvGLP) public returns (address) {
         plvGLP = _plvGLP;
         return plvGLP;
     }

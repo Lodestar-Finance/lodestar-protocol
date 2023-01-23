@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 pragma experimental ABIEncoderV2;
 
@@ -10,14 +11,14 @@ interface StdReferenceInterface {
     }
 
     /// Returns the price data for the given base/quote pair. Revert if not available.
-    function getReferenceData(string calldata _base, string calldata _quote)
-        external
-        view
-        returns (ReferenceData memory);
+    function getReferenceData(
+        string calldata _base,
+        string calldata _quote
+    ) external view returns (ReferenceData memory);
 
     /// Similar to getReferenceData, but with multiple base/quote pairs at once.
-    function getRefenceDataBulk(string[] calldata _bases, string[] calldata _quotes)
-        external
-        view
-        returns (ReferenceData[] memory);
+    function getRefenceDataBulk(
+        string[] calldata _bases,
+        string[] calldata _quotes
+    ) external view returns (ReferenceData[] memory);
 }

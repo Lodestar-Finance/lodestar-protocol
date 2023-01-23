@@ -639,7 +639,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         doTransferOut(borrower, borrowAmount);
 
         /* We emit a Borrow event */
-        emit Borrow(borrower, borrowAmount, accountBorrowsNew, totalBorrowsNew);
+        emit Borrow(borrower, borrowAmount, accountBorrowsNew, totalBorrowsNew, borrowIndex);
     }
 
     /**
@@ -715,7 +715,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         totalBorrows = totalBorrowsNew;
 
         /* We emit a RepayBorrow event */
-        emit RepayBorrow(payer, borrower, actualRepayAmount, accountBorrowsNew, totalBorrowsNew);
+        emit RepayBorrow(payer, borrower, actualRepayAmount, accountBorrowsNew, totalBorrowsNew, borrowIndex);
 
         return actualRepayAmount;
     }
@@ -1009,7 +1009,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
     }
 
     /**
-     * @notice Accrues interest and reduces reserves by transferring from msg.sender
+     * @notice Accrues interest and increases reserves by transferring from msg.sender
      * @param addAmount Amount of addition to reserves
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
