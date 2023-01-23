@@ -41,6 +41,8 @@ contract GLPOracle {
 
     uint256 private constant BASE = 1e18;
 
+    event updatePosted(address market, uint256 timestamp, uint256 cumulativeRate);
+
     event newGLPAddress(address newGLPAddress);
 
     event newGLPManagerAddress(address newGLPManagerAddress);
@@ -141,6 +143,8 @@ contract GLPOracle {
             observation.timestamp = block.timestamp;
             observation.cumulativeRate = cumulativeRateCurrent;
         }
+
+        emit updatePosted(plvGLP, observation.timestamp, observation.cumulativeRate);
     }
 
     // given the cumulative prices of the start and end of a period, and the length of the period, compute the average
