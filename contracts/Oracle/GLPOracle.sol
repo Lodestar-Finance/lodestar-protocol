@@ -23,7 +23,7 @@ contract GLPOracle {
     // e.g. if the window size is 24 hours, and the granularity is 24, the oracle will return the average price for
     //   the period:
     //   [now - [22 hours, 24 hours], now]
-    uint8 public granularity;
+    uint public granularity;
     // this is redundant with granularity and windowSize, but stored for gas savings & informational purposes.
     uint public periodSize;
 
@@ -53,7 +53,7 @@ contract GLPOracle {
 
     event windowSizeUpdated(uint oldWindowSize, uint newWindowSize);
 
-    event granularityUpdated(uint8 oldGranularity, uint8 newGranularity);
+    event granularityUpdated(uint oldGranularity, uint newGranularity);
 
     event periodSizeUpdated(uint oldPeriodSize, uint newPeriodSize);
 
@@ -120,7 +120,7 @@ contract GLPOracle {
     // returns the observation from the oldest epoch (at the beginning of the window) relative to the current time
     function getFirstObservationInWindow() private view returns (Observation storage firstObservation) {
         uint8 observationIndex = observationIndexOf(block.timestamp);
-        uint8 firstObservationIndex = (observationIndex + 1) % granularity;
+        uint firstObservationIndex = (observationIndex + 1) % granularity;
         firstObservation = observationList[plvGLP][firstObservationIndex];
     }
 
@@ -211,15 +211,20 @@ contract GLPOracle {
         emit windowSizeUpdated(oldWindowSize, windowSize);
     }
 
-    function _updateGranularity(uint8 _newGranularity) external {
+    function _updateGranularity(uint _newGranularity) external {
         require(msg.sender == admin, "Only the admin can change the plvGLP contract address");
-        uint8 oldGranularity = granularity;
+        require(granularity > 1, "GLPOracle: GRANULARITY");
+        uint oldGranularity = granularity;
         granularity = _newGranularity;
         emit granularityUpdated(oldGranularity, granularity);
     }
 
     function _updatePeriodSize(uint _newPeriodSize) external {
         require(msg.sender == admin, "Only the admin can change the plvGLP contract address");
+        require(
+            (periodSize = windowSize / granularity) * granularity == windowSize,
+            "GLPOracle: WINDOW_NOT_EVENLY_DIVISIBLE"
+        );
         uint oldPeriodSize = periodSize;
         periodSize = _newPeriodSize;
         emit windowSizeUpdated(oldPeriodSize, periodSize);
