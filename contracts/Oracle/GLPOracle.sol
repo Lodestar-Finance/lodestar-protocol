@@ -142,9 +142,8 @@ contract GLPOracle {
             uint256 cumulativeRateCurrent = getCumulativeExchangeRate();
             observation.timestamp = block.timestamp;
             observation.cumulativeRate = cumulativeRateCurrent;
+            emit updatePosted(plvGLP, observation.timestamp, observation.cumulativeRate);
         }
-
-        emit updatePosted(plvGLP, observation.timestamp, observation.cumulativeRate);
     }
 
     // given the cumulative prices of the start and end of a period, and the length of the period, compute the average
@@ -222,11 +221,11 @@ contract GLPOracle {
     function _updatePeriodSize(uint _newPeriodSize) external {
         require(msg.sender == admin, "Only the admin can change the plvGLP contract address");
         require(
-            (periodSize = windowSize / granularity) * granularity == windowSize,
+            (_newPeriodSize = windowSize / granularity) * granularity == windowSize,
             "GLPOracle: WINDOW_NOT_EVENLY_DIVISIBLE"
         );
         uint oldPeriodSize = periodSize;
         periodSize = _newPeriodSize;
-        emit windowSizeUpdated(oldPeriodSize, periodSize);
+        emit periodSizeUpdated(oldPeriodSize, periodSize);
     }
 }
