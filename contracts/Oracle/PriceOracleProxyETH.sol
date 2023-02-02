@@ -149,7 +149,7 @@ contract PriceOracleProxyETH is Exponential {
      * @return The price of plvGLP already scaled to 18 decimals
      */
     function getPlvGLPPrice() internal view returns (uint256) {
-        uint256 price = GLPOracleInterface(glpOracleAddress).getPlvGLPPrice();
+        uint256 price = PlvGLPOracleInterface(glpOracleAddress).getPlvGLPPrice();
         require(price > 0, "invalid price");
         return price;
     }
@@ -223,7 +223,7 @@ contract PriceOracleProxyETH is Exponential {
      * @notice Set guardian for price oracle proxy
      * @param _newGlpOracle The new LODE oracle contract
      */
-    function _setGlpOracle(GLPOracleInterface _newGlpOracle) external {
+    function _setGlpOracle(PlvGLPOracleInterface _newGlpOracle) external {
         require(msg.sender == admin, "only the admin may set new GLP Oracle");
         require(_newGlpOracle.isGLPOracle(), "Invalid Contract");
         glpOracleAddress = address(_newGlpOracle);
