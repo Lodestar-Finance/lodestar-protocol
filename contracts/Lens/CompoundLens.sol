@@ -83,7 +83,7 @@ contract CompoundLens {
         uint compSupplySpeed;
         uint compBorrowSpeed;
         uint borrowCap;
-        uint supplyCap;
+        //uint supplyCap;
     }
 
     event lodeMetaData(uint balance, uint allocated);
@@ -160,7 +160,7 @@ contract CompoundLens {
 
         (uint compSupplySpeed, uint compBorrowSpeed) = getCompSpeeds(comptroller, cToken);
 
-        (uint borrowCap, uint supplyCap) = getMarketCaps(comptroller, cToken);
+        uint borrowCap /* , uint supplyCap */ = getMarketCaps(comptroller, cToken);
 
         return
             CTokenMetadata({
@@ -180,8 +180,8 @@ contract CompoundLens {
                 underlyingDecimals: underlyingDecimals,
                 compSupplySpeed: compSupplySpeed,
                 compBorrowSpeed: compBorrowSpeed,
-                borrowCap: borrowCap,
-                supplyCap: supplyCap
+                borrowCap: borrowCap
+                //supplyCap: supplyCap
             });
     }
 
