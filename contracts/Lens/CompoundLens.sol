@@ -120,7 +120,7 @@ contract CompoundLens {
         return (compSupplySpeed, compBorrowSpeed);
     }
 
-    function getMarketCaps(ComptrollerLensInterface comptroller, CToken cToken) internal returns (uint, uint) {
+    function getMarketCaps(ComptrollerLensInterface comptroller, CToken cToken) internal returns (uint /* , uint */) {
         // Getting comp speeds is gnarly due to not every network having the
         // split comp speeds from Proposal 62 and other networks don't even
         // have comp speeds.
@@ -132,14 +132,14 @@ contract CompoundLens {
             borrowCap = abi.decode(borrowCapReturnData, (uint));
         }
 
-        uint supplyCap = 0;
+        /* uint supplyCap = 0;
         (bool supplyCapSuccess, bytes memory supplyCapReturnData) = address(comptroller).call(
             abi.encodePacked(comptroller.supplyCaps.selector, address(cToken))
         );
         if (supplyCapSuccess) {
             supplyCap = abi.decode(supplyCapReturnData, (uint));
-        }
-        return (borrowCap, supplyCap);
+        } */
+        return (borrowCap /* , supplyCap */);
     }
 
     function cTokenMetadata(CToken cToken) public returns (CTokenMetadata memory) {
