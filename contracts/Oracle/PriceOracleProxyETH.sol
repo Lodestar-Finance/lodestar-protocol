@@ -108,9 +108,6 @@ contract PriceOracleProxyETH is Exponential {
             uint256 price = getPlvGLPPrice();
             price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
             return price;
-        } else if (cTokenAddress == lLodeAddress) {
-            uint256 price = getLodePrice(lodeOracle);
-            return price;
         } else if (address(aggregatorInfo.source) != address(0)) {
             bool sequencerStatus = getSequencerStatus(sequencerAddress);
             uint256 price = getPriceFromChainlink(aggregatorInfo.source);
@@ -159,7 +156,7 @@ contract PriceOracleProxyETH is Exponential {
      * @param poolAddress the address of the LODE token contract
      * @return the price of LODE in wei
      */
-    function getLodePrice(address poolAddress) internal view returns (uint256) {
+    function getLodePrice(address poolAddress) public view returns (uint256) {
         uint256 price = SushiOracleInterface(poolAddress).price();
         return price;
     }
