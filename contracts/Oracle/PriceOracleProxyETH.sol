@@ -70,7 +70,6 @@ contract PriceOracleProxyETH is Exponential {
      * @param letherAddress_ the address of the Ether cToken
      * @param lplvGLPAddress_ the address of the plvGLP cToken
      * @param glpOracleAddress_ the address of the GLP Oracle contract
-     * @param lLodeAddress_ the address of the LODE cToken
      * @param lodeOracle_ the address of the LODE oracle contract
      */
     constructor(
@@ -80,7 +79,6 @@ contract PriceOracleProxyETH is Exponential {
         address letherAddress_,
         address lplvGLPAddress_,
         address glpOracleAddress_,
-        address lLodeAddress_,
         address lodeOracle_
     ) {
         admin = admin_;
@@ -89,7 +87,6 @@ contract PriceOracleProxyETH is Exponential {
         letherAddress = letherAddress_;
         lplvGLPAddress = lplvGLPAddress_;
         glpOracleAddress = glpOracleAddress_;
-        lLodeAddress = lLodeAddress_;
         lodeOracle = lodeOracle_;
     }
 
