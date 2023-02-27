@@ -1113,7 +1113,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      */
     function _setMarketSupplyCaps(CToken[] calldata cTokens, uint[] calldata newSupplyCaps) external {
         require(
-            msg.sender == admin || msg.sender == borrowCapGuardian,
+            msg.sender == admin || msg.sender == supplyCapGuardian,
             "only admin or borrow cap guardian can set borrow caps"
         );
 
