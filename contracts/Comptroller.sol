@@ -1545,6 +1545,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     /**
      * @notice Return the address of the COMP token
      * @return The address of COMP
+     * @notice THIS IS THE TESTNET LODE ADDRESS!!!
      */
     function getCompAddress() public view virtual returns (address) {
         return 0x21Dbd0C4f580e636aBc68327669A15239C82eee0;
