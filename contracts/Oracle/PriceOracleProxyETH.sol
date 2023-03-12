@@ -117,7 +117,8 @@ contract PriceOracleProxyETH is Exponential {
                 uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
                 return price * 10 ** (18 - underlyingDecimals);
             } else if (aggregatorInfo.base == AggregatorBase.ETH) {
-                return price;
+                uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
+                return price * 10 ** (18 - underlyingDecimals);
             }
         }
         revert("Invalid Oracle Request");
