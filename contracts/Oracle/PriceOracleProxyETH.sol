@@ -42,9 +42,6 @@ contract PriceOracleProxyETH is Exponential {
     /// @notice Chainlink L2 sequencer aggregator address
     address public sequencerAddress;
 
-    /// @notice LODE token
-    address public lLodeAddress;
-
     /// @notice LODE oracle address (SushiOracle)
     address public lodeOracle;
 
