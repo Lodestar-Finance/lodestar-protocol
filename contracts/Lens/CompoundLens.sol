@@ -96,7 +96,7 @@ contract CompoundLens {
         // Getting comp speeds is gnarly due to not every network having the
         // split comp speeds from Proposal 62 and other networks don't even
         // have comp speeds.
-        uint compSupplySpeed = 0;
+        uint compSupplySpeed;
         (bool compSupplySpeedSuccess, bytes memory compSupplySpeedReturnData) = address(comptroller).call(
             abi.encodePacked(comptroller.compSupplySpeeds.selector, abi.encode(address(cToken)))
         );
@@ -104,7 +104,7 @@ contract CompoundLens {
             compSupplySpeed = abi.decode(compSupplySpeedReturnData, (uint));
         }
 
-        uint compBorrowSpeed = 0;
+        uint compBorrowSpeed;
         (bool compBorrowSpeedSuccess, bytes memory compBorrowSpeedReturnData) = address(comptroller).call(
             abi.encodePacked(comptroller.compBorrowSpeeds.selector, abi.encode(address(cToken)))
         );

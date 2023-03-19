@@ -138,9 +138,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @return A dynamic list with the assets the account has entered
      */
     function getAssetsIn(address account) external view returns (CToken[] memory) {
-        CToken[] memory assetsIn = accountAssets[account];
-
-        return assetsIn;
+        return accountAssets[account];
     }
 
     /**
@@ -163,9 +161,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
         uint[] memory results = new uint[](len);
         for (uint i; i < len;) {
-            CToken cToken = CToken(cTokens[i]);
-
-            results[i] = uint(addToMarketInternal(cToken, msg.sender));
+            results[i] = uint(addToMarketInternal(CToken(cTokens[i]), msg.sender));
             unchecked { ++i; }
         }
 
@@ -907,16 +903,12 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
          *   = actualRepayAmount * (liquidationIncentive * priceBorrowed) / (priceCollateral * exchangeRate)
          */
         uint exchangeRateMantissa = CToken(cTokenCollateral).exchangeRateStored(); // Note: reverts on error
-        uint seizeTokens;
-        Exp memory numerator;
-        Exp memory denominator;
-        Exp memory ratio;
 
-        numerator = mul_(Exp({mantissa: liquidationIncentiveMantissa}), Exp({mantissa: priceBorrowedMantissa}));
-        denominator = mul_(Exp({mantissa: priceCollateralMantissa}), Exp({mantissa: exchangeRateMantissa}));
-        ratio = div_(numerator, denominator);
+        Exp memory numerator = mul_(Exp({mantissa: liquidationIncentiveMantissa}), Exp({mantissa: priceBorrowedMantissa}));
+        Exp memory denominator = mul_(Exp({mantissa: priceCollateralMantissa}), Exp({mantissa: exchangeRateMantissa}));
+        Exp memory ratio = div_(numerator, denominator);
 
-        seizeTokens = mul_ScalarTruncate(ratio, actualRepayAmount);
+        uint256 seizeTokens = mul_ScalarTruncate(ratio, actualRepayAmount);
 
         return (uint(Error.NO_ERROR), seizeTokens);
     }
