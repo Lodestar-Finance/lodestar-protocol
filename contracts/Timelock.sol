@@ -65,7 +65,7 @@ contract Timelock {
         emit NewPendingAdmin(pendingAdmin_);
     }
 
-    function queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) external returns (bytes32) {
+    function queueTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external returns (bytes32) {
         if (msg.sender != admin) revert NotAdmin();
         if (eta < getBlockTimestamp() + delay) revert EstimatedExecutionWrong();
 
@@ -76,7 +76,7 @@ contract Timelock {
         return txHash;
     }
 
-    function cancelTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) external {
+    function cancelTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external {
         if (msg.sender != admin) revert NotAdmin();
 
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
@@ -85,7 +85,7 @@ contract Timelock {
         emit CancelTransaction(txHash, target, value, signature, data, eta);
     }
 
-    function executeTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) external payable returns (bytes memory) {
+    function executeTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external payable returns (bytes memory) {
         if (msg.sender != admin) revert NotAdmin();
 
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));

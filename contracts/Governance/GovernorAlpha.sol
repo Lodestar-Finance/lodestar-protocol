@@ -151,20 +151,20 @@ contract GovernorAlpha {
         guardian = guardian_;
     }
 
-    function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) external returns (uint) {
-        if (comp.getPriorVotes(msg.sender, block.number - 1) <= proposalThreshold()) revert ProposerVotesBelowProposalThreshold();
+    function propose(address[] calldata targets, uint[] calldata values, string[] memory signatures, bytes[] memory calldatas, string memory description) external returns (uint) {
         {
+            if (comp.getPriorVotes(msg.sender, block.number - 1) <= proposalThreshold()) revert ProposerVotesBelowProposalThreshold();
             uint256 len = targets.length;
             if (len != values.length || len != signatures.length || len != calldatas.length) revert ParityMismatch();
             if (len == 0) revert MustProvideActions();
             if (len > proposalMaxOperations()) revert TooManyActions();
-        }
 
-        uint latestProposalId = latestProposalIds[msg.sender];
-        if (latestProposalId != 0) {
-          ProposalState proposersLatestProposalState = state(latestProposalId);
-          if (proposersLatestProposalState == ProposalState.Active) revert AlreadyActiveProposal();
-          if (proposersLatestProposalState == ProposalState.Pending) revert AlreadyPendingProposal();
+            uint latestProposalId = latestProposalIds[msg.sender];
+            if (latestProposalId != 0) {
+                ProposalState proposersLatestProposalState = state(latestProposalId);
+                if (proposersLatestProposalState == ProposalState.Active) revert AlreadyActiveProposal();
+                if (proposersLatestProposalState == ProposalState.Pending) revert AlreadyPendingProposal();
+            }
         }
 
         uint startBlock = block.number + votingDelay();
@@ -175,19 +175,21 @@ contract GovernorAlpha {
             proposalId = ++ proposalCount;
         }
 
-        Proposal storage newProposal = proposals[proposalId];
-        // This should never happen but add a check in case.
-        if (newProposal.id != 0) revert ProposalIDCollision();
-        newProposal.id = proposalId;
-        newProposal.proposer = msg.sender;
-        newProposal.targets = targets;
-        newProposal.values = values;
-        newProposal.signatures = signatures;
-        newProposal.calldatas = calldatas;
-        newProposal.startBlock = startBlock;
-        newProposal.endBlock = endBlock;
+        {
+            Proposal storage newProposal = proposals[proposalId];
+            // This should never happen but add a check in case.
+            if (newProposal.id != 0) revert ProposalIDCollision();
+            newProposal.id = proposalId;
+            newProposal.proposer = msg.sender;
+            newProposal.targets = targets;
+            newProposal.values = values;
+            newProposal.signatures = signatures;
+            newProposal.calldatas = calldatas;
+            newProposal.startBlock = startBlock;
+            newProposal.endBlock = endBlock;
 
-        latestProposalIds[newProposal.proposer] = proposalId;
+            latestProposalIds[newProposal.proposer] = proposalId;
+        }
 
         emit ProposalCreated(proposalId, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
         return proposalId;

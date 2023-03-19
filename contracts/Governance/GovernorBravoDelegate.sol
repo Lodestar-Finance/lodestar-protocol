@@ -102,23 +102,23 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
       * @param description String description of the proposal
       * @return Proposal id of new proposal
       */
-    function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) external returns (uint) {
-        // Reject proposals before initiating as Governor
-        if (initialProposalId == 0) revert GovernorBravoNotActive();
-        // Allow addresses above proposal threshold and whitelisted addresses to propose
-        if (comp.getPriorVotes(msg.sender, block.number - 1) <= proposalThreshold && !isWhitelisted(msg.sender)) revert ProposerVotesBelowProposalThreshold();
+    function propose(address[] calldata targets, uint[] calldata values, string[] memory signatures, bytes[] memory calldatas, string memory description) external returns (uint) {
         {
+            // Reject proposals before initiating as Governor
+            if (initialProposalId == 0) revert GovernorBravoNotActive();
+            // Allow addresses above proposal threshold and whitelisted addresses to propose
+            if (comp.getPriorVotes(msg.sender, block.number - 1) <= proposalThreshold && !isWhitelisted(msg.sender)) revert ProposerVotesBelowProposalThreshold();
             uint256 targetsLength = targets.length;
             if (targetsLength != values.length || targetsLength != signatures.length || targetsLength != calldatas.length) revert InformationParityMismatch();
             if (targetsLength == 0) revert MustProvideActions();
             if (targetsLength > proposalMaxOperations) revert TooManyActions();
-        }
 
-        uint latestProposalId = latestProposalIds[msg.sender];
-        if (latestProposalId != 0) {
-          ProposalState proposersLatestProposalState = state(latestProposalId);
-          if (proposersLatestProposalState == ProposalState.Active) revert AlreadyActiveProposal();
-          if (proposersLatestProposalState == ProposalState.Pending) revert AlreadyPendingProposal();
+            uint latestProposalId = latestProposalIds[msg.sender];
+            if (latestProposalId != 0) {
+                ProposalState proposersLatestProposalState = state(latestProposalId);
+                if (proposersLatestProposalState == ProposalState.Active) revert AlreadyActiveProposal();
+                if (proposersLatestProposalState == ProposalState.Pending) revert AlreadyPendingProposal();
+            }
         }
 
         uint startBlock = block.number + votingDelay;
@@ -128,19 +128,22 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         unchecked {
             newProposalID = ++ proposalCount;
         }
-        Proposal storage newProposal = proposals[newProposalID];
-        // This should never happen but add a check in case.
-        if (newProposal.id != 0) revert ProposalIDCollision();
-        newProposal.id = newProposalID;
-        newProposal.proposer = msg.sender;
-        newProposal.targets = targets;
-        newProposal.values = values;
-        newProposal.signatures = signatures;
-        newProposal.calldatas = calldatas;
-        newProposal.startBlock = startBlock;
-        newProposal.endBlock = endBlock;
 
-        latestProposalIds[newProposal.proposer] = newProposalID;
+        {
+            Proposal storage newProposal = proposals[newProposalID];
+            // This should never happen but add a check in case.
+            if (newProposal.id != 0) revert ProposalIDCollision();
+            newProposal.id = newProposalID;
+            newProposal.proposer = msg.sender;
+            newProposal.targets = targets;
+            newProposal.values = values;
+            newProposal.signatures = signatures;
+            newProposal.calldatas = calldatas;
+            newProposal.startBlock = startBlock;
+            newProposal.endBlock = endBlock;
+
+            latestProposalIds[newProposal.proposer] = newProposalID;
+        }
 
         emit ProposalCreated(newProposalID, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
         return newProposalID;

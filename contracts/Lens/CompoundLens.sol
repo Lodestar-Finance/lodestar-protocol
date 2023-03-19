@@ -301,7 +301,7 @@ contract CompoundLens {
     function getGovReceipts(
         GovernorAlpha governor,
         address voter,
-        uint[] memory proposalIds
+        uint[] calldata proposalIds
     ) external view returns (GovReceipt[] memory) {
         uint proposalCount = proposalIds.length;
         GovReceipt[] memory res = new GovReceipt[](proposalCount);
@@ -329,7 +329,7 @@ contract CompoundLens {
     function getGovBravoReceipts(
         GovernorBravoInterface governor,
         address voter,
-        uint[] memory proposalIds
+        uint[] calldata proposalIds
     ) external view returns (GovBravoReceipt[] memory) {
         uint proposalCount = proposalIds.length;
         GovBravoReceipt[] memory res = new GovBravoReceipt[](proposalCount);

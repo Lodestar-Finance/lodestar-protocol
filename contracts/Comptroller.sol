@@ -158,7 +158,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param cTokens The list of addresses of the cToken markets to be enabled
      * @return Success indicator for whether each corresponding market was entered
      */
-    function enterMarkets(address[] memory cTokens) external override returns (uint[] memory) {
+    function enterMarkets(address[] calldata cTokens) external override returns (uint[] memory) {
         uint len = cTokens.length;
 
         uint[] memory results = new uint[](len);
@@ -1519,7 +1519,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param supplySpeeds New supply-side COMP speed for the corresponding market.
      * @param borrowSpeeds New borrow-side COMP speed for the corresponding market.
      */
-    function _setCompSpeeds(CToken[] memory cTokens, uint[] memory supplySpeeds, uint[] memory borrowSpeeds) external {
+    function _setCompSpeeds(CToken[] calldata cTokens, uint[] calldata supplySpeeds, uint[] calldata borrowSpeeds) external {
         if (!adminOrInitializing()) revert NotAdmin();
 
         uint numTokens = cTokens.length;
