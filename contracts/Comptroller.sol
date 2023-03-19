@@ -292,7 +292,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         // Supply cap of 0 corresponds to unlimited minting, totalSupply is denominated in underlying, not ctokens
         if (supplyCap != 0) {
             uint256 totalSupplyCTokens = CToken(cToken).totalSupply();
-            uint256 totalSupplyUnderlying = div_(mul_(totalSupplyCTokens, exchangeRate), 1e18);
+            uint256 totalSupplyUnderlying = (totalSupplyCTokens * exchangeRate) / 1e18;
 
             if (totalSupplyUnderlying + mintAmount >= supplyCap) revert MarketSupplyCapReached();
         }
@@ -1290,10 +1290,10 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         CompMarketState storage supplyState = compSupplyState[cToken];
         uint supplySpeed = compSupplySpeeds[cToken];
         uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
-        uint deltaBlocks = sub_(uint(blockNumber), uint(supplyState.block));
+        uint deltaBlocks = uint(blockNumber) - uint(supplyState.block);
         if (deltaBlocks > 0 && supplySpeed > 0) {
             uint supplyTokens = CToken(cToken).totalSupply();
-            uint compAccrued = mul_(deltaBlocks, supplySpeed);
+            uint compAccrued = deltaBlocks * supplySpeed;
             Double memory ratio = supplyTokens > 0 ? fraction(compAccrued, supplyTokens) : Double({mantissa: 0});
             supplyState.index = safe224(
                 add_(Double({mantissa: supplyState.index}), ratio).mantissa,
@@ -1314,10 +1314,10 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         CompMarketState storage borrowState = compBorrowState[cToken];
         uint borrowSpeed = compBorrowSpeeds[cToken];
         uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
-        uint deltaBlocks = sub_(uint(blockNumber), uint(borrowState.block));
+        uint deltaBlocks = uint(blockNumber) - uint(borrowState.block);
         if (deltaBlocks > 0 && borrowSpeed > 0) {
             uint borrowAmount = div_(CToken(cToken).totalBorrows(), marketBorrowIndex);
-            uint compAccrued = mul_(deltaBlocks, borrowSpeed);
+            uint compAccrued = deltaBlocks * borrowSpeed;
             Double memory ratio = borrowAmount > 0 ? fraction(compAccrued, borrowAmount) : Double({mantissa: 0});
             borrowState.index = safe224(
                 add_(Double({mantissa: borrowState.index}), ratio).mantissa,
@@ -1413,10 +1413,10 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     function updateContributorRewards(address contributor) public {
         uint compSpeed = compContributorSpeeds[contributor];
         uint blockNumber = getBlockNumber();
-        uint deltaBlocks = sub_(blockNumber, lastContributorBlock[contributor]);
+        uint deltaBlocks = block.number - lastContributorBlock[contributor];
         if (deltaBlocks > 0 && compSpeed > 0) {
-            uint newAccrued = mul_(deltaBlocks, compSpeed);
-            uint contributorAccrued = add_(compAccrued[contributor], newAccrued);
+            uint newAccrued = deltaBlocks * compSpeed;
+            uint contributorAccrued = compAccrued[contributor] + newAccrued;
 
             compAccrued[contributor] = contributorAccrued;
             lastContributorBlock[contributor] = blockNumber;

@@ -2,10 +2,9 @@
 pragma solidity ^0.8.10;
 
 import "../EIP20Interface.sol";
-import "../Exponential.sol";
 import "./Interfaces/UniswapV2Interface.sol";
 
-contract SushiOracle is Exponential {
+contract SushiOracle {
     error NotAdmin();
 
     bool public constant isSushiOracle = true;

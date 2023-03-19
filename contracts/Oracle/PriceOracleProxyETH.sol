@@ -8,11 +8,11 @@ import "../CErc20.sol";
 import "../CToken.sol";
 import "../EIP20Interface.sol";
 import "./Interfaces/PlvGLPOracleInterface.sol";
-import "../Exponential.sol";
+import "../ExponentialNoError.sol";
 import "./SushiOracle.sol";
 import "./Interfaces/SushiOracleInterface.sol";
 
-contract PriceOracleProxyETH is Exponential {
+contract PriceOracleProxyETH is ExponentialNoError {
     error ChainlinkFeedsNotBeingUpdated();
     error InvalidOracleRequest();
     error NotAdmin();

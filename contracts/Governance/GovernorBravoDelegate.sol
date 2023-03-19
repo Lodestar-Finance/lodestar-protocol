@@ -121,8 +121,8 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
           if (proposersLatestProposalState == ProposalState.Pending) revert AlreadyPendingProposal();
         }
 
-        uint startBlock = add256(block.number, votingDelay);
-        uint endBlock = add256(startBlock, votingPeriod);
+        uint startBlock = block.number + votingDelay;
+        uint endBlock = startBlock + votingPeriod;
 
         proposalCount++;
         uint newProposalID = proposalCount;
@@ -157,7 +157,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
     function queue(uint proposalId) external {
         if (state(proposalId) != ProposalState.Succeeded) revert ProposalQueuedIsSucceeded();
         Proposal storage proposal = proposals[proposalId];
-        uint eta = add256(block.timestamp, timelock.delay());
+        uint eta = block.timestamp + timelock.delay();
         uint256 len = proposal.targets.length;
         for (uint i; i < len;) {
             queueOrRevertInternal(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], eta);
@@ -263,7 +263,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
             return ProposalState.Succeeded;
         } else if (proposal.executed) {
             return ProposalState.Executed;
-        } else if (block.timestamp >= add256(proposal.eta, timelock.GRACE_PERIOD())) {
+        } else if (block.timestamp >= proposal.eta + timelock.GRACE_PERIOD()) {
             return ProposalState.Expired;
         } else {
             return ProposalState.Queued;
@@ -318,11 +318,11 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         uint96 votes = comp.getPriorVotes(voter, proposal.startBlock);
 
         if (support == 0) {
-            proposal.againstVotes = add256(proposal.againstVotes, votes);
+            proposal.againstVotes = proposal.againstVotes + votes;
         } else if (support == 1) {
-            proposal.forVotes = add256(proposal.forVotes, votes);
-        } else if (support == 2) {
-            proposal.abstainVotes = add256(proposal.abstainVotes, votes);
+            proposal.forVotes = proposal.forVotes + votes;
+        } else {
+            proposal.abstainVotes = proposal.abstainVotes + votes;
         }
 
         receipt.hasVoted = true;
@@ -457,17 +457,6 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
 
         emit NewAdmin(oldAdmin, admin);
         emit NewPendingAdmin(oldPendingAdmin, pendingAdmin);
-    }
-
-    function add256(uint256 a, uint256 b) internal pure returns (uint) {
-        uint c = a + b;
-        require(c >= a, "addition overflow");
-        return c;
-    }
-
-    function sub256(uint256 a, uint256 b) internal pure returns (uint) {
-        require(b <= a, "subtraction underflow");
-        return a - b;
     }
 
     function getChainIdInternal() internal view returns (uint) {
