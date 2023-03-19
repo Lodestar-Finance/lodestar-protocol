@@ -5,6 +5,8 @@ import "./GovernorBravoInterfaces.sol";
 
 contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoEvents {
 
+    constructor() payable {}
+
     /// @notice The name of this contract
     string public constant name = "Lodestar Governor Bravo";
 

@@ -60,7 +60,7 @@ contract Comp {
      * @notice Construct a new LODE token
      * @param account The initial account to grant all the tokens
      */
-    constructor(address account) public {
+    constructor(address account) payable {
         balances[account] = uint96(totalSupply);
         emit Transfer(address(0), account, totalSupply);
     }

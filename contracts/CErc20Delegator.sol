@@ -33,7 +33,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
         address payable admin_,
         address implementation_,
         bytes memory becomeImplementationData
-    ) {
+    ) payable {
         // Creator of the contract is admin during initialization
         admin = payable(msg.sender);
 

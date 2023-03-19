@@ -5,6 +5,8 @@ pragma solidity 0.8.10;
 import "./OpenZeppelin/Ownable.sol";
 
 contract Whitelist is Ownable {
+    constructor() payable {}
+
     mapping(address => bool) public isWhitelisted;
 
     function updateWhitelist(

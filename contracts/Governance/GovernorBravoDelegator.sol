@@ -5,13 +5,14 @@ import "./GovernorBravoInterfaces.sol";
 
 contract GovernorBravoDelegator is GovernorBravoDelegatorStorage, GovernorBravoEvents {
 	constructor(
-			address timelock_,
-			address comp_,
-			address admin_,
-	        address implementation_,
-	        uint votingPeriod_,
-	        uint votingDelay_,
-            uint proposalThreshold_) public {
+        address timelock_,
+        address comp_,
+        address admin_,
+        address implementation_,
+        uint votingPeriod_,
+        uint votingDelay_,
+        uint proposalThreshold_
+    ) payable {
 
         // Admin set to msg.sender for initialization
         admin = msg.sender;

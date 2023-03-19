@@ -20,7 +20,7 @@ contract SushiOracle is Exponential {
 
     event adminUpdated(address newAdmin);
 
-    constructor(address tokenA_, address tokenB_, address poolContract_) {
+    constructor(address tokenA_, address tokenB_, address poolContract_) payable {
         admin = msg.sender;
         tokenA = tokenA_;
         tokenB = tokenB_;

@@ -80,7 +80,7 @@ contract PriceOracleProxyETH is Exponential {
         address lplvGLPAddress_,
         address glpOracleAddress_,
         address lodeOracle_
-    ) {
+    ) payable {
         admin = admin_;
         ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
         sequencerAddress = sequencerAddress_;

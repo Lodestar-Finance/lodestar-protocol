@@ -15,6 +15,8 @@ import "./Whitelist.sol";
  * @author Compound
  */
 abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorReporter {
+    constructor() payable {}
+
     /**
      * @notice Initialize the money market
      * @param comptroller_ The address of the Comptroller

@@ -27,7 +27,7 @@ contract CEther is CToken {
         string memory symbol_,
         uint8 decimals_,
         address payable admin_
-    ) {
+    ) payable {
         // Creator of the contract is admin during initialization
         admin = payable(msg.sender);
 

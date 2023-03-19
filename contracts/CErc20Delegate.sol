@@ -12,7 +12,7 @@ contract CErc20Delegate is CErc20, CDelegateInterface {
     /**
      * @notice Construct an empty delegate
      */
-    constructor() {}
+    constructor() payable {}
 
     /**
      * @notice Called by the delegator on a delegate to initialize it for duty
