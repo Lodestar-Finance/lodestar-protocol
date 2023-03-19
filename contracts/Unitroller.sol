@@ -30,7 +30,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
       */
     event NewAdmin(address oldAdmin, address newAdmin);
 
-    constructor() public {
+    constructor() payable {
         // Set admin to caller
         admin = msg.sender;
     }
