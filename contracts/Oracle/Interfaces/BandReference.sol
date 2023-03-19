@@ -17,7 +17,7 @@ interface StdReferenceInterface {
     ) external view returns (ReferenceData memory);
 
     /// Similar to getReferenceData, but with multiple base/quote pairs at once.
-    function getRefenceDataBulk(
+    function getReferenceDataBulk(
         string[] calldata _bases,
         string[] calldata _quotes
     ) external view returns (ReferenceData[] memory);
