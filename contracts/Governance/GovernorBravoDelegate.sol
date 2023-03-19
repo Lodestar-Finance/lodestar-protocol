@@ -144,10 +144,10 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         newProposal.canceled = false;
         newProposal.executed = false;
 
-        latestProposalIds[newProposal.proposer] = newProposal.id;
+        latestProposalIds[newProposal.proposer] = newProposalID;
 
-        emit ProposalCreated(newProposal.id, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
-        return newProposal.id;
+        emit ProposalCreated(newProposalID, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
+        return newProposalID;
     }
 
     /**
@@ -351,7 +351,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         uint oldVotingDelay = votingDelay;
         votingDelay = newVotingDelay;
 
-        emit VotingDelaySet(oldVotingDelay,votingDelay);
+        emit VotingDelaySet(oldVotingDelay, newVotingDelay);
     }
 
     /**
@@ -364,7 +364,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         uint oldVotingPeriod = votingPeriod;
         votingPeriod = newVotingPeriod;
 
-        emit VotingPeriodSet(oldVotingPeriod, votingPeriod);
+        emit VotingPeriodSet(oldVotingPeriod, newVotingPeriod);
     }
 
     /**
@@ -378,7 +378,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         uint oldProposalThreshold = proposalThreshold;
         proposalThreshold = newProposalThreshold;
 
-        emit ProposalThresholdSet(oldProposalThreshold, proposalThreshold);
+        emit ProposalThresholdSet(oldProposalThreshold, newProposalThreshold);
     }
 
     /**
@@ -402,7 +402,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         address oldGuardian = whitelistGuardian;
         whitelistGuardian = account;
 
-        emit WhitelistGuardianSet(oldGuardian, whitelistGuardian);
+        emit WhitelistGuardianSet(oldGuardian, account);
      }
 
     /**
@@ -455,8 +455,8 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         // Clear the pending value
         pendingAdmin = address(0);
 
-        emit NewAdmin(oldAdmin, admin);
-        emit NewPendingAdmin(oldPendingAdmin, pendingAdmin);
+        emit NewAdmin(oldAdmin, oldPendingAdmin);
+        emit NewPendingAdmin(oldPendingAdmin, address(0));
     }
 
     function getChainIdInternal() internal view returns (uint) {

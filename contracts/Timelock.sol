@@ -47,7 +47,7 @@ contract Timelock {
         if (delay_ > MAXIMUM_DELAY) revert ExceedMaximumDelay();
         delay = delay_;
 
-        emit NewDelay(delay);
+        emit NewDelay(delay_);
     }
 
     function acceptAdmin() public {
@@ -55,14 +55,14 @@ contract Timelock {
         admin = msg.sender;
         pendingAdmin = address(0);
 
-        emit NewAdmin(admin);
+        emit NewAdmin(msg.sender);
     }
 
     function setPendingAdmin(address pendingAdmin_) public {
         if (msg.sender != address(this)) revert SenderNotTimelock();
         pendingAdmin = pendingAdmin_;
 
-        emit NewPendingAdmin(pendingAdmin);
+        emit NewPendingAdmin(pendingAdmin_);
     }
 
     function queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public returns (bytes32) {

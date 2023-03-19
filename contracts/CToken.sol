@@ -157,9 +157,8 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      * @return Whether or not the approval succeeded
      */
     function approve(address spender, uint256 amount) external override returns (bool) {
-        address src = msg.sender;
-        transferAllowances[src][spender] = amount;
-        emit Approval(src, spender, amount);
+        transferAllowances[msg.sender][spender] = amount;
+        emit Approval(msg.sender, spender, amount);
         return true;
     }
 
@@ -951,8 +950,8 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         // Clear the pending value
         pendingAdmin = payable(address(0));
 
-        emit NewAdmin(oldAdmin, admin);
-        emit NewPendingAdmin(oldPendingAdmin, pendingAdmin);
+        emit NewAdmin(oldAdmin, oldPendingAdmin);
+        emit NewPendingAdmin(oldPendingAdmin, address(0));
 
         return NO_ERROR;
     }

@@ -130,11 +130,14 @@ abstract contract BaseJumpRateModelV2 is InterestRateModel {
      * @param kink_ The utilization point at which the jump multiplier is applied
      */
     function updateJumpRateModelInternal(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink_) internal {
-        baseRatePerBlock = baseRatePerYear / blocksPerYear;
-        multiplierPerBlock = (multiplierPerYear * BASE) / (blocksPerYear * kink_);
-        jumpMultiplierPerBlock = jumpMultiplierPerYear / blocksPerYear;
+        uint256 _baseRatePerBlock = baseRatePerYear / blocksPerYear;
+        baseRatePerBlock = _baseRatePerBlock;
+        uint256 _multiplierPerBlock = (multiplierPerYear * BASE) / (blocksPerYear * kink_);
+        multiplierPerBlock = _multiplierPerBlock;
+        uint256 _jumpMultiplierPerBlock = jumpMultiplierPerYear / blocksPerYear;
+        jumpMultiplierPerBlock = _jumpMultiplierPerBlock;
         kink = kink_;
 
-        emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink);
+        emit NewInterestParams(_baseRatePerBlock, _multiplierPerBlock, _jumpMultiplierPerBlock, kink_);
     }
 }

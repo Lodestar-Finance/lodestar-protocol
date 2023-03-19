@@ -193,7 +193,7 @@ contract PriceOracleProxyETH is ExponentialNoError {
     function _setGuardian(address _guardian) external {
         if (msg.sender != admin) revert NotAdmin();
         guardian = _guardian;
-        emit SetGuardian(guardian);
+        emit SetGuardian(_guardian);
     }
 
     /**
@@ -203,7 +203,7 @@ contract PriceOracleProxyETH is ExponentialNoError {
     function _setAdmin(address _admin) external {
         if (msg.sender != admin) revert NotAdmin();
         admin = _admin;
-        emit SetAdmin(admin);
+        emit SetAdmin(_admin);
     }
 
     /**
@@ -214,7 +214,7 @@ contract PriceOracleProxyETH is ExponentialNoError {
         if (msg.sender != admin) revert NotAdmin();
         if (!_newLodeOracle.isSushiOracle()) revert InvalidContract();
         lodeOracle = address(_newLodeOracle);
-        emit newLodeOracle(lodeOracle);
+        emit newLodeOracle(address(_newLodeOracle));
     }
 
     /**
@@ -225,7 +225,7 @@ contract PriceOracleProxyETH is ExponentialNoError {
         if (msg.sender != admin) revert NotAdmin();
         if (!_newGlpOracle.isGLPOracle()) revert InvalidContract();
         glpOracleAddress = address(_newGlpOracle);
-        emit newGlpOracle(glpOracleAddress);
+        emit newGlpOracle(address(_newGlpOracle));
     }
 
     /**

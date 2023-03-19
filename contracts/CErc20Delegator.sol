@@ -83,7 +83,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
 
         delegateToImplementation(abi.encodeWithSignature("_becomeImplementation(bytes)", becomeImplementationData));
 
-        emit NewImplementation(oldImplementation, implementation);
+        emit NewImplementation(oldImplementation, implementation_);
     }
 
     /**

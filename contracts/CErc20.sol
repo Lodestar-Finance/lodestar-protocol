@@ -39,7 +39,7 @@ contract CErc20 is CToken, CErc20Interface {
 
         // Set underlying and sanity check it
         underlying = underlying_;
-        EIP20Interface(underlying).totalSupply();
+        EIP20Interface(underlying_).totalSupply();
     }
 
     /*** User Interface ***/

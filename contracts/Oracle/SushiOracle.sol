@@ -36,8 +36,7 @@ contract SushiOracle {
     function price() public view returns (uint256) {
         uint256 balanceA = getTokenBalance(tokenA);
         uint256 balanceB = getTokenBalance(tokenB);
-        uint256 price = (balanceA * 1e18) / balanceB;
-        return price;
+        return (balanceA * 1e18) / balanceB;
     }
 
     //ADMIN FUNCTIONS

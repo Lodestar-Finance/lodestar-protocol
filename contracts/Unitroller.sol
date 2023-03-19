@@ -46,7 +46,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
 
         pendingComptrollerImplementation = newPendingImplementation;
 
-        emit NewPendingImplementation(oldPendingImplementation, pendingComptrollerImplementation);
+        emit NewPendingImplementation(oldPendingImplementation, newPendingImplementation);
 
         return uint(Error.NO_ERROR);
     }
@@ -70,8 +70,8 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
 
         pendingComptrollerImplementation = address(0);
 
-        emit NewImplementation(oldImplementation, comptrollerImplementation);
-        emit NewPendingImplementation(oldPendingImplementation, pendingComptrollerImplementation);
+        emit NewImplementation(oldImplementation, oldPendingImplementation);
+        emit NewPendingImplementation(oldPendingImplementation, address(0));
 
         return uint(Error.NO_ERROR);
     }
@@ -122,8 +122,8 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
         // Clear the pending value
         pendingAdmin = address(0);
 
-        emit NewAdmin(oldAdmin, admin);
-        emit NewPendingAdmin(oldPendingAdmin, pendingAdmin);
+        emit NewAdmin(oldAdmin, oldPendingAdmin);
+        emit NewPendingAdmin(oldPendingAdmin, address(0));
 
         return uint(Error.NO_ERROR);
     }
