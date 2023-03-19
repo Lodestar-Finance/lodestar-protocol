@@ -260,7 +260,7 @@ abstract contract CTokenInterface is CTokenStorage {
     function _setInterestRateModel(InterestRateModel newInterestRateModel) external virtual returns (uint);
 }
 
-contract CErc20Storage {
+abstract contract CErc20Storage {
     /**
      * @notice Underlying asset for this CToken
      */
@@ -299,7 +299,7 @@ abstract contract CErc20Interface is CErc20Storage {
     function _addReserves(uint addAmount) external virtual returns (uint);
 }
 
-contract CDelegationStorage {
+abstract contract CDelegationStorage {
     /**
      * @notice Implementation address for this contract
      */
