@@ -280,12 +280,12 @@ contract Comp {
     }
 
     function safe32(uint n, string memory errorMessage) internal pure returns (uint32) {
-        require(n < 2**32, errorMessage);
+        require(n < type(uint32).max, errorMessage);
         return uint32(n);
     }
 
     function safe96(uint n, string memory errorMessage) internal pure returns (uint96) {
-        require(n < 2**96, errorMessage);
+        require(n < type(uint96).max, errorMessage);
         return uint96(n);
     }
 
