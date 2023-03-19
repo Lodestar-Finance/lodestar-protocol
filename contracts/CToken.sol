@@ -33,9 +33,9 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         string memory name_,
         string memory symbol_,
         uint8 decimals_
-    ) public {
         require(msg.sender == admin, "only admin may initialize the market");
         require(accrualBlockNumber == 0 && borrowIndex == 0, "market may only be initialized once");
+    ) public payable {
 
         // Set initial exchange rate
         initialExchangeRateMantissa = initialExchangeRateMantissa_;
