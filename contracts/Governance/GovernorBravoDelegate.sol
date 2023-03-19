@@ -124,25 +124,21 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         uint startBlock = block.number + votingDelay;
         uint endBlock = startBlock + votingPeriod;
 
-        proposalCount++;
-        uint newProposalID = proposalCount;
+        uint newProposalID;
+        unchecked {
+            newProposalID = ++ proposalCount;
+        }
         Proposal storage newProposal = proposals[newProposalID];
         // This should never happen but add a check in case.
         if (newProposal.id != 0) revert ProposalIDCollision();
         newProposal.id = newProposalID;
         newProposal.proposer = msg.sender;
-        newProposal.eta = 0;
         newProposal.targets = targets;
         newProposal.values = values;
         newProposal.signatures = signatures;
         newProposal.calldatas = calldatas;
         newProposal.startBlock = startBlock;
         newProposal.endBlock = endBlock;
-        newProposal.forVotes = 0;
-        newProposal.againstVotes = 0;
-        newProposal.abstainVotes = 0;
-        newProposal.canceled = false;
-        newProposal.executed = false;
 
         latestProposalIds[newProposal.proposer] = newProposalID;
 

@@ -170,24 +170,22 @@ contract GovernorAlpha {
         uint startBlock = block.number + votingDelay();
         uint endBlock = startBlock + votingPeriod();
 
-        proposalCount++;
-        uint proposalId = proposalCount;
+        uint proposalId;
+        unchecked {
+            proposalId = ++ proposalCount;
+        }
+
         Proposal storage newProposal = proposals[proposalId];
         // This should never happen but add a check in case.
         if (newProposal.id != 0) revert ProposalIDCollision();
         newProposal.id = proposalId;
         newProposal.proposer = msg.sender;
-        newProposal.eta = 0;
         newProposal.targets = targets;
         newProposal.values = values;
         newProposal.signatures = signatures;
         newProposal.calldatas = calldatas;
         newProposal.startBlock = startBlock;
         newProposal.endBlock = endBlock;
-        newProposal.forVotes = 0;
-        newProposal.againstVotes = 0;
-        newProposal.canceled = false;
-        newProposal.executed = false;
 
         latestProposalIds[newProposal.proposer] = proposalId;
 

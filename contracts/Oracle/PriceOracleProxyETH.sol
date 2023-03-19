@@ -157,9 +157,8 @@ contract PriceOracleProxyETH is ExponentialNoError {
      * @notice Get price of LODE token
      * @return the price of LODE in wei
      */
-        uint256 price = SushiOracleInterface(lodeOracle).price();
-        return price;
     function getLodePrice() external view returns (uint256) {
+        return SushiOracleInterface(lodeOracle).price();
     }
 
     /**

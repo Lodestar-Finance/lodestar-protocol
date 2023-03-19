@@ -94,28 +94,18 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         }
 
         /* Get the allowance, infinite for the account owner */
-        uint startingAllowance = 0;
-        if (spender == src) {
-            startingAllowance = type(uint).max;
-        } else {
-            startingAllowance = transferAllowances[src][spender];
-        }
-
-        /* Do the calculations, checking for {under,over}flow */
-        uint allowanceNew = startingAllowance - tokens;
-        uint srcTokensNew = accountTokens[src] - tokens;
-        uint dstTokensNew = accountTokens[dst] + tokens;
+        uint startingAllowance = spender == src ? type(uint).max : transferAllowances[src][spender];
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
         // (No safe failures beyond this point)
 
-        accountTokens[src] = srcTokensNew;
-        accountTokens[dst] = dstTokensNew;
+        accountTokens[src] = accountTokens[src] - tokens;
+        accountTokens[dst] = accountTokens[dst] + tokens;
 
         /* Eat some of the allowance (if necessary) */
         if (startingAllowance != type(uint).max) {
-            transferAllowances[src][spender] = allowanceNew;
+            transferAllowances[src][spender] = startingAllowance - tokens;
         }
 
         /* We emit a Transfer event */
@@ -188,8 +178,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      * @return The amount of underlying owned by `owner`
      */
     function balanceOfUnderlying(address owner) external override returns (uint) {
-        Exp memory exchangeRate = Exp({mantissa: exchangeRateCurrent()});
-        return mul_ScalarTruncate(exchangeRate, accountTokens[owner]);
+        return mul_ScalarTruncate(Exp({mantissa: exchangeRateCurrent()}), accountTokens[owner]);
     }
 
     /**
@@ -273,8 +262,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         /* Calculate new borrow balance using the interest index:
          *  recentBorrowBalance = borrower.borrowBalance * market.borrowIndex / borrower.borrowIndex
          */
-        uint principalTimesIndex = borrowSnapshot.principal * borrowIndex;
-        return principalTimesIndex / borrowSnapshot.interestIndex;
+        return (borrowSnapshot.principal * borrowIndex) / borrowSnapshot.interestIndex;
     }
 
     /**
@@ -313,8 +301,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
              * Otherwise:
              *  exchangeRate = (totalCash + totalBorrows - totalReserves) / totalSupply
              */
-            uint totalCash = getCashPrior();
-            uint cashPlusBorrowsMinusReserves = totalCash + totalBorrows - totalReserves;
+            uint cashPlusBorrowsMinusReserves = getCashPrior() + totalBorrows - totalReserves;
             uint exchangeRate = (cashPlusBorrowsMinusReserves * expScale) / _totalSupply;
 
             return exchangeRate;
@@ -1040,8 +1027,6 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      * @return (uint, uint) An error code (0=success, otherwise a failure (see ErrorReporter.sol for details)) and the actual amount added, net token fees
      */
     function _addReservesFresh(uint addAmount) internal returns (uint, uint) {
-        // totalReserves + actualAddAmount
-        uint totalReservesNew;
         uint actualAddAmount;
 
         // We fail gracefully unless market's block number equals current block number
@@ -1063,7 +1048,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
 
         actualAddAmount = doTransferIn(msg.sender, addAmount);
 
-        totalReservesNew = totalReserves + actualAddAmount;
+        uint totalReservesNew = totalReserves + actualAddAmount;
 
         // Store reserves[n+1] = reserves[n] + actualAddAmount
         totalReserves = totalReservesNew;
@@ -1093,9 +1078,6 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function _reduceReservesFresh(uint reduceAmount) internal returns (uint) {
-        // totalReserves - reduceAmount
-        uint totalReservesNew;
-
         // Check caller is admin
         if (msg.sender != admin) {
             revert ReduceReservesAdminCheck();
@@ -1120,7 +1102,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         // EFFECTS & INTERACTIONS
         // (No safe failures beyond this point)
 
-        totalReservesNew = totalReserves - reduceAmount;
+        uint totalReservesNew = totalReserves - reduceAmount;
 
         // Store reserves[n+1] = reserves[n] - reduceAmount
         totalReserves = totalReservesNew;

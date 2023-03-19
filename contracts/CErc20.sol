@@ -153,10 +153,10 @@ contract CErc20 is CToken, CErc20Interface {
      * @param token The address of the ERC-20 token to sweep
      */
     function sweepToken(EIP20NonStandardInterface token) external override {
-        uint256 balance = token.balanceOf(address(this));
-        token.transfer(admin, balance);
         if (msg.sender != admin) revert NotAdmin();
         if (address(token) == underlying) revert CanNotSweepUnderlyingToken();
+
+        token.transfer(msg.sender, token.balanceOf(address(this)));
     }
 
     /**
@@ -176,8 +176,7 @@ contract CErc20 is CToken, CErc20Interface {
      * @return The quantity of underlying tokens owned by this contract
      */
     function getCashPrior() internal view virtual override returns (uint) {
-        EIP20Interface token = EIP20Interface(underlying);
-        return token.balanceOf(address(this));
+        return EIP20Interface(underlying).balanceOf(address(this));
     }
 
     /**
@@ -192,9 +191,8 @@ contract CErc20 is CToken, CErc20Interface {
     function doTransferIn(address from, uint amount) internal virtual override returns (uint) {
         // Read from storage once
         address underlying_ = underlying;
-        EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying_);
         uint balanceBefore = EIP20Interface(underlying_).balanceOf(address(this));
-        token.transferFrom(from, address(this), amount);
+        EIP20NonStandardInterface(underlying_).transferFrom(from, address(this), amount);
 
         bool success;
         assembly {
@@ -230,8 +228,7 @@ contract CErc20 is CToken, CErc20Interface {
      *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
     function doTransferOut(address payable to, uint amount) internal virtual override {
-        EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
-        token.transfer(to, amount);
+        EIP20NonStandardInterface(underlying).transfer(to, amount);
 
         bool success;
         assembly {
