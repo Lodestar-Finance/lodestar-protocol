@@ -7,10 +7,13 @@ import "./EIP20NonStandardInterface.sol";
 import "./ErrorReporter.sol";
 
 abstract contract CTokenStorage {
+    uint256 internal constant _NOT_ENTERED = 1;
+    uint256 internal constant _ENTERED = 2;
+
     /**
      * @dev Guard variable for re-entrancy checks
      */
-    bool internal _notEntered;
+    uint256 internal _status;
 
     /**
      * @notice EIP-20 token name for this token

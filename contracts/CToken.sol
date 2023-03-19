@@ -69,7 +69,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         decimals = decimals_;
 
         // The counter starts true to prevent changing it from zero to non-zero (i.e. smaller cost/refund)
-        _notEntered = true;
+        _status = _NOT_ENTERED;
     }
 
     /**
@@ -1208,9 +1208,9 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      * @dev Prevents a contract from calling itself, directly or indirectly.
      */
     modifier nonReentrant() {
-        require(_notEntered, "re-entered");
-        _notEntered = false;
+        if (_status == _ENTERED) revert Reentered();
+        _status = _ENTERED;
         _;
-        _notEntered = true; // get a gas-refund post-Istanbul
+        _status = _NOT_ENTERED;
     }
 }
