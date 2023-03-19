@@ -100,7 +100,7 @@ contract PriceOracleProxyETH is ExponentialNoError {
      * @param cToken The cToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getUnderlyingPrice(CToken cToken) public view returns (uint256) {
+    function getUnderlyingPrice(CToken cToken) external view returns (uint256) {
         address cTokenAddress = address(cToken);
         AggregatorInfo memory aggregatorInfo = aggregators[cTokenAddress];
         if (cTokenAddress == letherAddress) {
@@ -157,9 +157,9 @@ contract PriceOracleProxyETH is ExponentialNoError {
      * @notice Get price of LODE token
      * @return the price of LODE in wei
      */
-    function getLodePrice() public view returns (uint256) {
         uint256 price = SushiOracleInterface(lodeOracle).price();
         return price;
+    function getLodePrice() external view returns (uint256) {
     }
 
     /**

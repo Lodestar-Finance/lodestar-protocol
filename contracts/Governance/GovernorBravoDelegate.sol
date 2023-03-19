@@ -77,7 +77,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
       * @param votingDelay_ The initial voting delay
       * @param proposalThreshold_ The initial proposal threshold
       */
-    function initialize(address timelock_, address comp_, uint votingPeriod_, uint votingDelay_, uint proposalThreshold_) virtual public {
+    function initialize(address timelock_, address comp_, uint votingPeriod_, uint votingDelay_, uint proposalThreshold_) virtual external {
         if (address(timelock) != address(0)) revert CanOnlyInitializeOnce();
         if (msg.sender != admin) revert NotAdmin();
         if (timelock_ == address(0)) revert InvalidTimelockAddress();
@@ -102,7 +102,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
       * @param description String description of the proposal
       * @return Proposal id of new proposal
       */
-    function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
+    function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) external returns (uint) {
         // Reject proposals before initiating as Governor
         if (initialProposalId == 0) revert GovernorBravoNotActive();
         // Allow addresses above proposal threshold and whitelisted addresses to propose

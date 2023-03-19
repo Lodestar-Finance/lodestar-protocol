@@ -76,7 +76,7 @@ contract WhitePaperInterestRateModel is InterestRateModel {
      * @param reserveFactorMantissa The current reserve factor for the market
      * @return The supply rate percentage per block as a mantissa (scaled by BASE)
      */
-    function getSupplyRate(uint cash, uint borrows, uint reserves, uint reserveFactorMantissa) override public view returns (uint) {
+    function getSupplyRate(uint cash, uint borrows, uint reserves, uint reserveFactorMantissa) override external view returns (uint) {
         uint oneMinusReserveFactor = BASE - reserveFactorMantissa;
         uint borrowRate = getBorrowRate(cash, borrows, reserves);
         uint rateToPool = borrowRate * oneMinusReserveFactor / BASE;

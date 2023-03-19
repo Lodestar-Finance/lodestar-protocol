@@ -158,7 +158,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param cTokens The list of addresses of the cToken markets to be enabled
      * @return Success indicator for whether each corresponding market was entered
      */
-    function enterMarkets(address[] memory cTokens) public override returns (uint[] memory) {
+    function enterMarkets(address[] memory cTokens) external override returns (uint[] memory) {
         uint len = cTokens.length;
 
         uint[] memory results = new uint[](len);
@@ -378,7 +378,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param redeemAmount The amount of the underlying asset being redeemed
      * @param redeemTokens The number of tokens being redeemed
      */
-    function redeemVerify(address cToken, address redeemer, uint redeemAmount, uint redeemTokens) public pure override {
+    function redeemVerify(address cToken, address redeemer, uint redeemAmount, uint redeemTokens) external pure override {
         // Shh - currently unused
         cToken;
         redeemer;
@@ -746,7 +746,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
                 account liquidity in excess of collateral requirements,
      *          account shortfall below collateral requirements)
      */
-    function getAccountLiquidity(address account) public view returns (uint, uint, uint) {
+    function getAccountLiquidity(address account) external view returns (uint, uint, uint) {
         (Error err, uint liquidity, uint shortfall) = getHypotheticalAccountLiquidityInternal(
             account,
             CToken(address(0)),
@@ -782,7 +782,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         address cTokenModify,
         uint redeemTokens,
         uint borrowAmount
-    ) public view returns (uint, uint, uint) {
+    ) external view returns (uint, uint, uint) {
         (Error err, uint liquidity, uint shortfall) = getHypotheticalAccountLiquidityInternal(
             account,
             CToken(cTokenModify),
@@ -928,7 +928,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @dev Admin function to set a new price oracle
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _setPriceOracle(PriceOracle newOracle) public returns (uint) {
+    function _setPriceOracle(PriceOracle newOracle) external returns (uint) {
         // Check caller is admin
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PRICE_ORACLE_OWNER_CHECK);
@@ -1178,7 +1178,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param newPauseGuardian The address of the new Pause Guardian
      * @return uint 0=success, otherwise a failure. (See enum Error for details)
      */
-    function _setPauseGuardian(address newPauseGuardian) public returns (uint) {
+    function _setPauseGuardian(address newPauseGuardian) external returns (uint) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PAUSE_GUARDIAN_OWNER_CHECK);
         }
@@ -1195,7 +1195,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         return uint(Error.NO_ERROR);
     }
 
-    function _setMintPaused(CToken cToken, bool state) public returns (bool) {
+    function _setMintPaused(CToken cToken, bool state) external returns (bool) {
         if (!markets[address(cToken)].isListed) revert MarketNotListed();
         if (msg.sender != pauseGuardian && msg.sender != admin) revert NotAdminOrGuardian();
         if (msg.sender != admin && !state) revert OnlyAdminCanUnpause();
@@ -1205,7 +1205,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         return state;
     }
 
-    function _setBorrowPaused(CToken cToken, bool state) public returns (bool) {
+    function _setBorrowPaused(CToken cToken, bool state) external returns (bool) {
         if (!markets[address(cToken)].isListed) revert MarketNotListed();
         if (msg.sender != pauseGuardian && msg.sender != admin) revert NotAdminOrGuardian();
         if (msg.sender != admin && !state) revert OnlyAdminCanUnpause();
@@ -1215,7 +1215,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         return state;
     }
 
-    function _setTransferPaused(bool state) public returns (bool) {
+    function _setTransferPaused(bool state) external returns (bool) {
         if (msg.sender != pauseGuardian && msg.sender != admin) revert NotAdminOrGuardian();
         if (msg.sender != admin && !state) revert OnlyAdminCanUnpause();
 
@@ -1224,7 +1224,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         return state;
     }
 
-    function _setSeizePaused(bool state) public returns (bool) {
+    function _setSeizePaused(bool state) external returns (bool) {
         if (msg.sender != pauseGuardian && msg.sender != admin) revert NotAdminOrGuardian();
         if (msg.sender != admin && !state) revert OnlyAdminCanUnpause();
 
@@ -1233,7 +1233,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         return state;
     }
 
-    function _become(Unitroller unitroller) public {
+    function _become(Unitroller unitroller) external {
         if (msg.sender != unitroller.admin()) revert OnlyUnitrollerAdmin();
         if (unitroller._acceptImplementation() != 0) revert ChangeNotAuthorized();
     }
@@ -1426,7 +1426,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @notice Claim all the comp accrued by holder in all markets
      * @param holder The address to claim COMP for
      */
-    function claimComp(address holder) public {
+    function claimComp(address holder) external {
         return claimComp(holder, allMarkets);
     }
 
@@ -1506,7 +1506,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param recipient The address of the recipient to transfer COMP to
      * @param amount The amount of COMP to (possibly) transfer
      */
-    function _grantComp(address recipient, uint amount) public {
+    function _grantComp(address recipient, uint amount) external {
         if (!adminOrInitializing()) revert NotAdmin();
         uint amountLeft = grantCompInternal(recipient, amount);
         if (amountLeft != 0) revert InsufficientCompForGrant();
@@ -1519,7 +1519,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param supplySpeeds New supply-side COMP speed for the corresponding market.
      * @param borrowSpeeds New borrow-side COMP speed for the corresponding market.
      */
-    function _setCompSpeeds(CToken[] memory cTokens, uint[] memory supplySpeeds, uint[] memory borrowSpeeds) public {
+    function _setCompSpeeds(CToken[] memory cTokens, uint[] memory supplySpeeds, uint[] memory borrowSpeeds) external {
         if (!adminOrInitializing()) revert NotAdmin();
 
         uint numTokens = cTokens.length;
@@ -1537,7 +1537,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param contributor The contributor whose COMP speed to update
      * @param compSpeed New COMP speed for contributor
      */
-    function _setContributorCompSpeed(address contributor, uint compSpeed) public {
+    function _setContributorCompSpeed(address contributor, uint compSpeed) external {
         if (!adminOrInitializing()) revert NotAdmin();
 
         // note that COMP speed could be set to 0 to halt liquidity rewards for a contributor
@@ -1558,7 +1558,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @dev The automatic getter may be used to access an individual market.
      * @return The list of market addresses
      */
-    function getAllMarkets() public view returns (CToken[] memory) {
+    function getAllMarkets() external view returns (CToken[] memory) {
         return allMarkets;
     }
 

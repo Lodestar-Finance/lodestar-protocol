@@ -151,7 +151,7 @@ contract GovernorAlpha {
         guardian = guardian_;
     }
 
-    function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
+    function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) external returns (uint) {
         if (comp.getPriorVotes(msg.sender, block.number - 1) <= proposalThreshold()) revert ProposerVotesBelowProposalThreshold();
         {
             uint256 len = targets.length;
@@ -195,7 +195,7 @@ contract GovernorAlpha {
         return proposalId;
     }
 
-    function queue(uint proposalId) public {
+    function queue(uint proposalId) external {
         if (state(proposalId) != ProposalState.Succeeded) revert ProposalQueuedIsSucceeded();
         Proposal storage proposal = proposals[proposalId];
         uint eta = block.timestamp + timelock.delay();
@@ -214,7 +214,7 @@ contract GovernorAlpha {
         timelock.queueTransaction(target, value, signature, data, eta);
     }
 
-    function execute(uint proposalId) public payable {
+    function execute(uint proposalId) external payable {
         if (state(proposalId) != ProposalState.Queued) revert ProposalNotQueued();
         Proposal storage proposal = proposals[proposalId];
         proposal.executed = true;
@@ -227,7 +227,7 @@ contract GovernorAlpha {
         emit ProposalExecuted(proposalId);
     }
 
-    function cancel(uint proposalId) public {
+    function cancel(uint proposalId) external {
         if (state(proposalId) == ProposalState.Executed) revert ExecutedProposal();
 
         Proposal storage proposal = proposals[proposalId];
@@ -244,12 +244,12 @@ contract GovernorAlpha {
         emit ProposalCanceled(proposalId);
     }
 
-    function getActions(uint proposalId) public view returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas) {
+    function getActions(uint proposalId) external view returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas) {
         Proposal storage p = proposals[proposalId];
         return (p.targets, p.values, p.signatures, p.calldatas);
     }
 
-    function getReceipt(uint proposalId, address voter) public view returns (Receipt memory) {
+    function getReceipt(uint proposalId, address voter) external view returns (Receipt memory) {
         return proposals[proposalId].receipts[voter];
     }
 
@@ -275,11 +275,11 @@ contract GovernorAlpha {
         }
     }
 
-    function castVote(uint proposalId, bool support) public {
+    function castVote(uint proposalId, bool support) external {
         return _castVote(msg.sender, proposalId, support);
     }
 
-    function castVoteBySig(uint proposalId, bool support, uint8 v, bytes32 r, bytes32 s) public {
+    function castVoteBySig(uint proposalId, bool support, uint8 v, bytes32 r, bytes32 s) external {
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
@@ -308,22 +308,22 @@ contract GovernorAlpha {
         emit VoteCast(voter, proposalId, support, votes);
     }
 
-    function __acceptAdmin() public {
+    function __acceptAdmin() external {
         if (msg.sender != guardian) revert NotGuardian();
         timelock.acceptAdmin();
     }
 
-    function __abdicate() public {
+    function __abdicate() external {
         if (msg.sender != guardian) revert NotGuardian();
         guardian = address(0);
     }
 
-    function __queueSetTimelockPendingAdmin(address newPendingAdmin, uint eta) public {
+    function __queueSetTimelockPendingAdmin(address newPendingAdmin, uint eta) external {
         if (msg.sender != guardian) revert NotGuardian();
         timelock.queueTransaction(address(timelock), 0, "setPendingAdmin(address)", abi.encode(newPendingAdmin), eta);
     }
 
-    function __executeSetTimelockPendingAdmin(address newPendingAdmin, uint eta) public {
+    function __executeSetTimelockPendingAdmin(address newPendingAdmin, uint eta) external {
         if (msg.sender != guardian) revert NotGuardian();
         timelock.executeTransaction(address(timelock), 0, "setPendingAdmin(address)", abi.encode(newPendingAdmin), eta);
     }

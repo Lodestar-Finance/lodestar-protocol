@@ -33,7 +33,7 @@ contract SushiOracle {
         return balance;
     }
 
-    function price() public view returns (uint256) {
+    function price() external view returns (uint256) {
         uint256 balanceA = getTokenBalance(tokenA);
         uint256 balanceB = getTokenBalance(tokenB);
         return (balanceA * 1e18) / balanceB;
@@ -41,13 +41,13 @@ contract SushiOracle {
 
     //ADMIN FUNCTIONS
 
-    function _setPoolContract(address newPoolContract) public {
+    function _setPoolContract(address newPoolContract) external {
         if (msg.sender != admin) revert NotAdmin();
         poolContract = newPoolContract;
         emit poolContractUpdated(newPoolContract);
     }
 
-    function _setAdmin(address newAdmin) public {
+    function _setAdmin(address newAdmin) external {
         if (msg.sender != admin) revert NotAdmin();
         admin = newAdmin;
         emit adminUpdated(newAdmin);

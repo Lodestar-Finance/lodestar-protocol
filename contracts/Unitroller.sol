@@ -36,7 +36,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
     }
 
     /*** Admin Functions ***/
-    function _setPendingImplementation(address newPendingImplementation) public returns (uint) {
+    function _setPendingImplementation(address newPendingImplementation) external returns (uint) {
 
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_IMPLEMENTATION_OWNER_CHECK);
@@ -56,7 +56,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
     * @dev Admin function for new implementation to accept it's role as implementation
     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
     */
-    function _acceptImplementation() public returns (uint) {
+    function _acceptImplementation() external returns (uint) {
         // Check caller is pendingImplementation and pendingImplementation ≠ address(0)
         if (msg.sender != pendingComptrollerImplementation || pendingComptrollerImplementation == address(0)) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_PENDING_IMPLEMENTATION_ADDRESS_CHECK);
@@ -83,7 +83,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
       * @param newPendingAdmin New pending admin.
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
-    function _setPendingAdmin(address newPendingAdmin) public returns (uint) {
+    function _setPendingAdmin(address newPendingAdmin) external returns (uint) {
         // Check caller = admin
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_ADMIN_OWNER_CHECK);
@@ -106,7 +106,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
       * @dev Admin function for pending admin to accept role and update admin
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
-    function _acceptAdmin() public returns (uint) {
+    function _acceptAdmin() external returns (uint) {
         // Check caller is pendingAdmin and pendingAdmin ≠ address(0)
         if (msg.sender != pendingAdmin || msg.sender == address(0)) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_ADMIN_PENDING_ADMIN_CHECK);

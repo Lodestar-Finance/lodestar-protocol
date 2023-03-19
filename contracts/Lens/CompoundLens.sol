@@ -284,7 +284,7 @@ contract CompoundLens {
     function getAccountLimits(
         ComptrollerLensInterface comptroller,
         address account
-    ) public view returns (AccountLimits memory) {
+    ) external view returns (AccountLimits memory) {
         (uint errorCode, uint liquidity, uint shortfall) = comptroller.getAccountLiquidity(account);
         if (errorCode != 0) revert ErrorCodeZero();
 
@@ -302,7 +302,7 @@ contract CompoundLens {
         GovernorAlpha governor,
         address voter,
         uint[] memory proposalIds
-    ) public view returns (GovReceipt[] memory) {
+    ) external view returns (GovReceipt[] memory) {
         uint proposalCount = proposalIds.length;
         GovReceipt[] memory res = new GovReceipt[](proposalCount);
         for (uint i; i < proposalCount;) {
@@ -330,7 +330,7 @@ contract CompoundLens {
         GovernorBravoInterface governor,
         address voter,
         uint[] memory proposalIds
-    ) public view returns (GovBravoReceipt[] memory) {
+    ) external view returns (GovBravoReceipt[] memory) {
         uint proposalCount = proposalIds.length;
         GovBravoReceipt[] memory res = new GovBravoReceipt[](proposalCount);
         for (uint i; i < proposalCount;) {

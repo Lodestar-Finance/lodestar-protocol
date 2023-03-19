@@ -115,7 +115,7 @@ abstract contract BaseJumpRateModelV2 is InterestRateModel {
      * @param reserveFactorMantissa The current reserve factor for the market
      * @return The supply rate percentage per block as a mantissa (scaled by BASE)
      */
-    function getSupplyRate(uint cash, uint borrows, uint reserves, uint reserveFactorMantissa) virtual override public view returns (uint) {
+    function getSupplyRate(uint cash, uint borrows, uint reserves, uint reserveFactorMantissa) virtual override external view returns (uint) {
         uint oneMinusReserveFactor = BASE - reserveFactorMantissa;
         uint borrowRate = getBorrowRateInternal(cash, borrows, reserves);
         uint rateToPool = borrowRate * oneMinusReserveFactor / BASE;

@@ -41,7 +41,7 @@ contract Timelock {
 
     fallback() external payable { }
 
-    function setDelay(uint delay_) public {
+    function setDelay(uint delay_) external {
         if (msg.sender != address(this)) revert SenderNotTimelock();
         if (delay_ < MINIMUM_DELAY) revert ExceedMinimumDelay();
         if (delay_ > MAXIMUM_DELAY) revert ExceedMaximumDelay();
@@ -50,7 +50,7 @@ contract Timelock {
         emit NewDelay(delay_);
     }
 
-    function acceptAdmin() public {
+    function acceptAdmin() external {
         if (msg.sender != pendingAdmin) revert NotPendingAdmin();
         admin = msg.sender;
         pendingAdmin = address(0);
@@ -58,14 +58,14 @@ contract Timelock {
         emit NewAdmin(msg.sender);
     }
 
-    function setPendingAdmin(address pendingAdmin_) public {
+    function setPendingAdmin(address pendingAdmin_) external {
         if (msg.sender != address(this)) revert SenderNotTimelock();
         pendingAdmin = pendingAdmin_;
 
         emit NewPendingAdmin(pendingAdmin_);
     }
 
-    function queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public returns (bytes32) {
+    function queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) external returns (bytes32) {
         if (msg.sender != admin) revert NotAdmin();
         if (eta < getBlockTimestamp() + delay) revert EstimatedExecutionWrong();
 
@@ -76,7 +76,7 @@ contract Timelock {
         return txHash;
     }
 
-    function cancelTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public {
+    function cancelTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) external {
         if (msg.sender != admin) revert NotAdmin();
 
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
@@ -85,7 +85,7 @@ contract Timelock {
         emit CancelTransaction(txHash, target, value, signature, data, eta);
     }
 
-    function executeTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public payable returns (bytes memory) {
+    function executeTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) external payable returns (bytes memory) {
         if (msg.sender != admin) revert NotAdmin();
 
         bytes32 txHash = keccak256(abi.encode(target, value, signature, data, eta));
