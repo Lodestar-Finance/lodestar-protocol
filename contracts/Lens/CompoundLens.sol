@@ -88,6 +88,8 @@ contract CompoundLens {
 
     event lodeMetaData(uint balance, uint allocated);
 
+    constructor() payable {}
+
     function getCompSpeeds(ComptrollerLensInterface comptroller, CToken cToken) internal returns (uint, uint) {
         // Getting comp speeds is gnarly due to not every network having the
         // split comp speeds from Proposal 62 and other networks don't even
