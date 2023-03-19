@@ -2,6 +2,12 @@
 pragma solidity ^0.8.10;
 
 contract Comp {
+    error ZeroAddress();
+    error InvalidSignature();
+    error InvalidNonce();
+    error SignatureExpired();
+    error NotDetermined();
+
     /// @notice EIP-20 token name for this token
     string public constant name = "Lodestar";
 
@@ -163,9 +169,11 @@ contract Comp {
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), "Comp::delegateBySig: invalid signature");
-        require(nonce == nonces[signatory]++, "Comp::delegateBySig: invalid nonce");
-        require(block.timestamp <= expiry, "Comp::delegateBySig: signature expired");
+        if (signatory == address(0)) revert InvalidSignature();
+        unchecked {
+            if (nonce != nonces[signatory]++) revert InvalidNonce();
+        }
+        if (block.timestamp > expiry) revert SignatureExpired();
         return _delegate(signatory, delegatee);
     }
 
@@ -187,7 +195,7 @@ contract Comp {
      * @return The number of votes the account had as of the given block
      */
     function getPriorVotes(address account, uint blockNumber) public view returns (uint96) {
-        require(blockNumber < block.number, "Comp::getPriorVotes: not yet determined");
+        if (blockNumber >= block.number) revert NotDetermined();
 
         uint32 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
@@ -231,8 +239,8 @@ contract Comp {
     }
 
     function _transferTokens(address src, address dst, uint96 amount) internal {
-        require(src != address(0), "Comp::_transferTokens: cannot transfer from the zero address");
-        require(dst != address(0), "Comp::_transferTokens: cannot transfer to the zero address");
+        if (src == address(0)) revert ZeroAddress();
+        if (dst == address(0)) revert ZeroAddress();
 
         balances[src] = balances[src] - amount;
         balances[dst] = balances[dst] - amount;

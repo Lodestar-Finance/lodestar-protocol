@@ -64,6 +64,8 @@ interface GovernorBravoInterface {
 }
 
 contract CompoundLens {
+    error ErrorCodeZero();
+
     address public constant nullAddress = address(0);
     struct CTokenMetadata {
         address cToken;
@@ -284,7 +286,7 @@ contract CompoundLens {
         address account
     ) public view returns (AccountLimits memory) {
         (uint errorCode, uint liquidity, uint shortfall) = comptroller.getAccountLiquidity(account);
-        require(errorCode == 0);
+        if (errorCode != 0) revert ErrorCodeZero();
 
         return AccountLimits({markets: comptroller.getAssetsIn(account), liquidity: liquidity, shortfall: shortfall});
     }

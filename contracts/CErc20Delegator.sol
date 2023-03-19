@@ -9,6 +9,8 @@ import "./CTokenInterfaces.sol";
  * @author Compound
  */
 contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterface {
+    error CannotSendValueToFallback();
+
     /**
      * @notice Construct a new money market
      * @param underlying_ The address of the underlying asset
@@ -70,7 +72,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
         bool allowResign,
         bytes memory becomeImplementationData
     ) public override {
-        require(msg.sender == admin, "CErc20Delegator::_setImplementation: Caller must be admin");
+        if (msg.sender != admin) revert NotAdmin();
 
         if (allowResign) {
             delegateToImplementation(abi.encodeWithSignature("_resignImplementation()"));
@@ -529,7 +531,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
      * @dev It returns to the external caller whatever the implementation returns or forwards reverts
      */
     fallback() external payable {
-        require(msg.value == 0, "CErc20Delegator:fallback: cannot send value to fallback");
+        if (msg.value != 0) revert CannotSendValueToFallback();
 
         // delegate all other functions to current implementation
         (bool success, ) = implementation.delegatecall(msg.data);

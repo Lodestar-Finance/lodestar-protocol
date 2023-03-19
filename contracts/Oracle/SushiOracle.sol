@@ -6,6 +6,8 @@ import "../Exponential.sol";
 import "./Interfaces/UniswapV2Interface.sol";
 
 contract SushiOracle is Exponential {
+    error NotAdmin();
+
     bool public constant isSushiOracle = true;
 
     address public immutable tokenA;
@@ -42,13 +44,13 @@ contract SushiOracle is Exponential {
     //ADMIN FUNCTIONS
 
     function _setPoolContract(address newPoolContract) public {
-        require(msg.sender == admin, "Only the admin can update the pool contract.");
+        if (msg.sender != admin) revert NotAdmin();
         poolContract = newPoolContract;
         emit poolContractUpdated(newPoolContract);
     }
 
     function _setAdmin(address newAdmin) public {
-        require(msg.sender == admin, "Only the admin can update the admin");
+        if (msg.sender != admin) revert NotAdmin();
         admin = newAdmin;
         emit adminUpdated(newAdmin);
     }

@@ -9,6 +9,9 @@ import "./CToken.sol";
  * @author Compound
  */
 contract CEther is CToken {
+    error SenderMismatch();
+    error ValueMismatch();
+
     /**
      * @notice Construct a new CEther money market
      * @param comptroller_ The address of the Comptroller
@@ -154,8 +157,8 @@ contract CEther is CToken {
         uint amount
     ) internal override returns (uint) {
         // Sanity checks
-        require(msg.sender == from, "sender mismatch");
-        require(msg.value == amount, "value mismatch");
+        if (msg.sender != from) revert SenderMismatch();
+        if (msg.value != amount) revert ValueMismatch();
         return amount;
     }
 

@@ -9,6 +9,8 @@ import "./InterestRateModel.sol";
   * @notice Version 2 modifies Version 1 by enabling updateable parameters.
   */
 abstract contract BaseJumpRateModelV2 is InterestRateModel {
+    error NotOwner();
+
     event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock, uint jumpMultiplierPerBlock, uint kink);
 
     uint256 private constant BASE = 1e18;
@@ -65,7 +67,7 @@ abstract contract BaseJumpRateModelV2 is InterestRateModel {
      * @param kink_ The utilization point at which the jump multiplier is applied
      */
     function updateJumpRateModel(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink_) virtual external {
-        require(msg.sender == owner, "only the owner may call this function.");
+        if (msg.sender != owner) revert NotOwner();
 
         updateJumpRateModelInternal(baseRatePerYear, multiplierPerYear, jumpMultiplierPerYear, kink_);
     }

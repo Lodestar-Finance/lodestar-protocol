@@ -15,6 +15,29 @@ import "./CTokenInterfaces.sol";
  * @author Compound
  */
 contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
+    error GetAccountSnapshotFailed();
+    error NotAdmin();
+    error MarketNotListed();
+    error NotAdminOrGuardian();
+    error OnlyAdminCanUnpause();
+    error MintPaused();
+    error MarketSupplyCapReached();
+    error BorrowPaused();
+    error NotCToken();
+    error MarketBorrowCapReached();
+    error CanNotRepayMoreThanTotalBorrow();
+    error SeizePaused();
+    error TransferPaused();
+    error MarketAlreadyAdded();
+    error OnlyAdminOrBorrowCapGuardian();
+    error OnlyAdminOrSupplyCapGuardian();
+    error InvalidInput();
+    error OnlyUnitrollerAdmin();
+    error ChangeNotAuthorized();
+    error CompMarketNotListed();
+    error InsufficientCompForGrant();
+    error RedeemTokensZero();
+
     /// @notice Emitted when an admin supports a market
     event MarketListed(CToken cToken);
 
@@ -192,7 +215,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         CToken cToken = CToken(cTokenAddress);
         /* Get sender tokensHeld and amountOwed underlying from the cToken */
         (uint oErr, uint tokensHeld, uint amountOwed, ) = cToken.getAccountSnapshot(msg.sender);
-        require(oErr == 0, "exitMarket: getAccountSnapshot failed"); // semi-opaque error code
+        if (oErr != 0) revert GetAccountSnapshotFailed(); // semi-opaque error code
 
         /* Fail if the sender has a borrow balance */
         if (amountOwed != 0) {
@@ -253,7 +276,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      */
     function mintAllowed(address cToken, address minter, uint mintAmount) external override returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
-        require(!mintGuardianPaused[cToken], "mint is paused");
+        if (mintGuardianPaused[cToken]) revert MintPaused();
 
         // Shh - currently unused
         minter;
@@ -271,8 +294,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
             uint256 totalSupplyCTokens = CToken(cToken).totalSupply();
             uint256 totalSupplyUnderlying = div_(mul_(totalSupplyCTokens, exchangeRate), 1e18);
 
-            uint256 nextTotalSupply = add_(totalSupplyUnderlying, mintAmount);
-            require(nextTotalSupply < supplyCap, "market supply cap reached");
+            if (totalSupplyUnderlying + mintAmount >= supplyCap) revert MarketSupplyCapReached();
         }
 
         // Keep the flywheel moving
@@ -363,7 +385,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
         // Require tokens is zero or amount is also zero
         if (redeemTokens == 0 && redeemAmount > 0) {
-            revert("redeemTokens zero");
+            revert RedeemTokensZero();
         }
     }
 
@@ -376,7 +398,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      */
     function borrowAllowed(address cToken, address borrower, uint borrowAmount) external override returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
-        require(!borrowGuardianPaused[cToken], "borrow is paused");
+        if (borrowGuardianPaused[cToken]) revert BorrowPaused();
 
         if (!markets[cToken].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
@@ -384,7 +406,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
         if (!markets[cToken].accountMembership[borrower]) {
             // only cTokens may call borrowAllowed if borrower not in market
-            require(msg.sender == cToken, "sender must be cToken");
+            if (msg.sender != cToken) revert NotCToken();
 
             // attempt to add borrower to the market
             Error err = addToMarketInternal(CToken(msg.sender), borrower);
@@ -404,8 +426,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         // Borrow cap of 0 corresponds to unlimited borrowing
         if (borrowCap != 0) {
             uint totalBorrows = CToken(cToken).totalBorrows();
-            uint nextTotalBorrows = add_(totalBorrows, borrowAmount);
-            require(nextTotalBorrows < borrowCap, "market borrow cap reached");
+            if (totalBorrows + borrowAmount >= borrowCap) revert MarketBorrowCapReached();
         }
 
         (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(
@@ -531,7 +552,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
         /* allow accounts to be liquidated if the market is deprecated */
         if (isDeprecated(CToken(cTokenBorrowed))) {
-            require(borrowBalance >= repayAmount, "Can not repay more than the total borrow");
+            if (borrowBalance < repayAmount) revert CanNotRepayMoreThanTotalBorrow();
         } else {
             /* The borrower must have shortfall in order to be liquidatable */
             (Error err, , uint shortfall) = getAccountLiquidityInternal(borrower);
@@ -598,7 +619,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         uint seizeTokens
     ) external override returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
-        require(!seizeGuardianPaused, "seize is paused");
+        if (seizeGuardianPaused) revert SeizePaused();
 
         // Shh - currently unused
         seizeTokens;
@@ -662,7 +683,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         uint transferTokens
     ) external override returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
-        require(!transferGuardianPaused, "transfer is paused");
+        if (transferGuardianPaused) revert TransferPaused();
 
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
@@ -933,7 +954,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      */
     function _setCloseFactor(uint newCloseFactorMantissa) external returns (uint) {
         // Check caller is admin
-        require(msg.sender == admin, "only admin can set close factor");
+        if (msg.sender != admin) revert NotAdmin();
 
         uint oldCloseFactorMantissa = closeFactorMantissa;
         closeFactorMantissa = newCloseFactorMantissa;
@@ -1040,9 +1061,9 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _addMarketInternal(address cToken) internal {
-            require(allMarkets[i] != CToken(cToken), "market already added");
         uint256 len = allMarkets.length;
         for (uint i; i < len;) {
+            if (allMarkets[i] == CToken(cToken)) revert MarketAlreadyAdded();
 
             unchecked { ++i; }
         }
@@ -1081,15 +1102,12 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param newBorrowCaps The new borrow cap values in underlying to be set. A value of 0 corresponds to unlimited borrowing.
      */
     function _setMarketBorrowCaps(CToken[] calldata cTokens, uint[] calldata newBorrowCaps) external {
-        require(
-            msg.sender == admin || msg.sender == borrowCapGuardian,
-            "only admin or borrow cap guardian can set borrow caps"
-        );
+        if (msg.sender != admin && msg.sender != borrowCapGuardian) revert OnlyAdminOrBorrowCapGuardian();
 
         uint numMarkets = cTokens.length;
         uint numBorrowCaps = newBorrowCaps.length;
 
-        require(numMarkets != 0 && numMarkets == numBorrowCaps, "invalid input");
+        if (numMarkets == 0 || numMarkets != numBorrowCaps) revert InvalidInput();
 
         for (uint i; i < numMarkets;) {
             borrowCaps[address(cTokens[i])] = newBorrowCaps[i];
@@ -1104,7 +1122,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param newBorrowCapGuardian The address of the new Borrow Cap Guardian
      */
     function _setBorrowCapGuardian(address newBorrowCapGuardian) external {
-        require(msg.sender == admin, "only admin can set borrow cap guardian");
+        if (msg.sender != admin) revert NotAdmin();
 
         // Save current value for inclusion in log
         address oldBorrowCapGuardian = borrowCapGuardian;
@@ -1123,15 +1141,12 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param newSupplyCaps The new supply cap values in underlying to be set. A value of 0 corresponds to unlimited minting.
      */
     function _setMarketSupplyCaps(CToken[] calldata cTokens, uint[] calldata newSupplyCaps) external {
-        require(
-            msg.sender == admin || msg.sender == supplyCapGuardian,
-            "only admin or borrow cap guardian can set borrow caps"
-        );
+        if (msg.sender != admin && msg.sender != supplyCapGuardian) revert OnlyAdminOrSupplyCapGuardian();
 
         uint numMarkets = cTokens.length;
         uint numSupplyCaps = newSupplyCaps.length;
 
-        require(numMarkets != 0 && numMarkets == numSupplyCaps, "invalid input");
+        if (numMarkets == 0 || numMarkets != numSupplyCaps) revert InvalidInput();
 
         for (uint i; i < numMarkets;) {
             supplyCaps[address(cTokens[i])] = newSupplyCaps[i];
@@ -1146,7 +1161,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param newSupplyCapGuardian The address of the new Supply Cap Guardian
      */
     function _setSupplyCapGuardian(address newSupplyCapGuardian) external {
-        require(msg.sender == admin, "only admin can set borrow cap guardian");
+        if (msg.sender != admin) revert NotAdmin();
 
         // Save current value for inclusion in log
         address oldSupplyCapGuardian = supplyCapGuardian;
@@ -1181,9 +1196,9 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _setMintPaused(CToken cToken, bool state) public returns (bool) {
-        require(markets[address(cToken)].isListed, "cannot pause a market that is not listed");
-        require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
-        require(msg.sender == admin || state == true, "only admin can unpause");
+        if (!markets[address(cToken)].isListed) revert MarketNotListed();
+        if (msg.sender != pauseGuardian && msg.sender != admin) revert NotAdminOrGuardian();
+        if (msg.sender != admin && !state) revert OnlyAdminCanUnpause();
 
         mintGuardianPaused[address(cToken)] = state;
         emit ActionPaused(cToken, "Mint", state);
@@ -1191,9 +1206,9 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _setBorrowPaused(CToken cToken, bool state) public returns (bool) {
-        require(markets[address(cToken)].isListed, "cannot pause a market that is not listed");
-        require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
-        require(msg.sender == admin || state == true, "only admin can unpause");
+        if (!markets[address(cToken)].isListed) revert MarketNotListed();
+        if (msg.sender != pauseGuardian && msg.sender != admin) revert NotAdminOrGuardian();
+        if (msg.sender != admin && !state) revert OnlyAdminCanUnpause();
 
         borrowGuardianPaused[address(cToken)] = state;
         emit ActionPaused(cToken, "Borrow", state);
@@ -1201,8 +1216,8 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _setTransferPaused(bool state) public returns (bool) {
-        require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
-        require(msg.sender == admin || state == true, "only admin can unpause");
+        if (msg.sender != pauseGuardian && msg.sender != admin) revert NotAdminOrGuardian();
+        if (msg.sender != admin && !state) revert OnlyAdminCanUnpause();
 
         transferGuardianPaused = state;
         emit ActionPaused("Transfer", state);
@@ -1210,8 +1225,8 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _setSeizePaused(bool state) public returns (bool) {
-        require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
-        require(msg.sender == admin || state == true, "only admin can unpause");
+        if (msg.sender != pauseGuardian && msg.sender != admin) revert NotAdminOrGuardian();
+        if (msg.sender != admin && !state) revert OnlyAdminCanUnpause();
 
         seizeGuardianPaused = state;
         emit ActionPaused("Seize", state);
@@ -1219,8 +1234,8 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _become(Unitroller unitroller) public {
-        require(msg.sender == unitroller.admin(), "only unitroller admin can change brains");
-        require(unitroller._acceptImplementation() == 0, "change not authorized");
+        if (msg.sender != unitroller.admin()) revert OnlyUnitrollerAdmin();
+        if (unitroller._acceptImplementation() != 0) revert ChangeNotAuthorized();
     }
 
     /**
@@ -1240,7 +1255,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      */
     function setCompSpeedInternal(CToken cToken, uint supplySpeed, uint borrowSpeed) internal {
         Market storage market = markets[address(cToken)];
-        require(market.isListed, "comp market is not listed");
+        if (!market.isListed) revert CompMarketNotListed();
 
         if (compSupplySpeeds[address(cToken)] != supplySpeed) {
             // Supply speed updated so let's update supply state to ensure that
@@ -1439,7 +1454,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         uint256 HoldersLen = holders.length;
         for (uint i; i < cTokensLen;) {
             CToken cToken = cTokens[i];
-            require(markets[address(cToken)].isListed, "market must be listed");
+            if (!markets[address(cToken)].isListed) revert MarketNotListed();
             if (borrowers == true) {
                 Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
                 updateCompBorrowIndex(address(cToken), borrowIndex);
@@ -1493,9 +1508,9 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param amount The amount of COMP to (possibly) transfer
      */
     function _grantComp(address recipient, uint amount) public {
-        require(adminOrInitializing(), "only admin can grant comp");
+        if (!adminOrInitializing()) revert NotAdmin();
         uint amountLeft = grantCompInternal(recipient, amount);
-        require(amountLeft == 0, "insufficient comp for grant");
+        if (amountLeft != 0) revert InsufficientCompForGrant();
         emit CompGranted(recipient, amount);
     }
 
@@ -1506,13 +1521,10 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param borrowSpeeds New borrow-side COMP speed for the corresponding market.
      */
     function _setCompSpeeds(CToken[] memory cTokens, uint[] memory supplySpeeds, uint[] memory borrowSpeeds) public {
-        require(adminOrInitializing(), "only admin can set comp speed");
+        if (!adminOrInitializing()) revert NotAdmin();
 
         uint numTokens = cTokens.length;
-        require(
-            numTokens == supplySpeeds.length && numTokens == borrowSpeeds.length,
-            "Comptroller::_setCompSpeeds invalid input"
-        );
+        if (numTokens != supplySpeeds.length || numTokens != borrowSpeeds.length) revert InvalidInput();
 
         for (uint i; i < numTokens;) {
             setCompSpeedInternal(cTokens[i], supplySpeeds[i], borrowSpeeds[i]);
@@ -1527,7 +1539,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param compSpeed New COMP speed for contributor
      */
     function _setContributorCompSpeed(address contributor, uint compSpeed) public {
-        require(adminOrInitializing(), "only admin can set comp speed");
+        if (!adminOrInitializing()) revert NotAdmin();
 
         // note that COMP speed could be set to 0 to halt liquidity rewards for a contributor
         updateContributorRewards(contributor);

@@ -13,6 +13,13 @@ import "./SushiOracle.sol";
 import "./Interfaces/SushiOracleInterface.sol";
 
 contract PriceOracleProxyETH is Exponential {
+    error ChainlinkFeedsNotBeingUpdated();
+    error InvalidOracleRequest();
+    error NotAdmin();
+    error InvalidContract();
+    error InvalidPrice();
+    error NotAdminOrGuardian();
+    error MismatchedData();
 
     bool public constant isPriceOracle = true;
 
@@ -106,9 +113,9 @@ contract PriceOracleProxyETH is Exponential {
         } else if (address(aggregatorInfo.source) != address(0)) {
             bool sequencerStatus = getSequencerStatus(sequencerAddress);
             uint256 price = getPriceFromChainlink(aggregatorInfo.source);
-            if (sequencerStatus == false) {
+            if (!sequencerStatus) {
                 // If flag is raised we shouldn't perform any critical operations
-                revert("Chainlink feeds are not being updated");
+                revert ChainlinkFeedsNotBeingUpdated();
             } else if (aggregatorInfo.base == AggregatorBase.USD) {
                 // Convert the price to ETH based if it's USD based.
                 price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
@@ -118,7 +125,7 @@ contract PriceOracleProxyETH is Exponential {
                 return price;
             }
         }
-        revert("Invalid Oracle Request");
+        revert InvalidOracleRequest();
     }
 
     /*** Internal functions ***/
@@ -130,7 +137,7 @@ contract PriceOracleProxyETH is Exponential {
      */
     function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint256) {
         (, int256 price, , , ) = aggregator.latestRoundData();
-        require(price > 0, "invalid price");
+        if (price <= 0) revert InvalidPrice();
 
         // Extend the decimals to 1e18.
         return uint256(price) * 10 ** (18 - uint256(aggregator.decimals()));
@@ -142,7 +149,7 @@ contract PriceOracleProxyETH is Exponential {
      */
     function getPlvGLPPrice() internal view returns (uint256) {
         uint256 price = PlvGLPOracleInterface(glpOracleAddress).getPlvGLPPrice();
-        require(price > 0, "invalid price");
+        if (price <= 0) revert InvalidPrice();
         return price;
     }
 
@@ -184,7 +191,7 @@ contract PriceOracleProxyETH is Exponential {
      * @param _guardian The new guardian
      */
     function _setGuardian(address _guardian) external {
-        require(msg.sender == admin, "only the admin may set new guardian");
+        if (msg.sender != admin) revert NotAdmin();
         guardian = _guardian;
         emit SetGuardian(guardian);
     }
@@ -194,7 +201,7 @@ contract PriceOracleProxyETH is Exponential {
      * @param _admin The new admin
      */
     function _setAdmin(address _admin) external {
-        require(msg.sender == admin, "only the admin may set new admin");
+        if (msg.sender != admin) revert NotAdmin();
         admin = _admin;
         emit SetAdmin(admin);
     }
@@ -204,8 +211,8 @@ contract PriceOracleProxyETH is Exponential {
      * @param _newLodeOracle The new LODE oracle contract
      */
     function _setLodeOracle(SushiOracleInterface _newLodeOracle) external {
-        require(msg.sender == admin, "only the admin may set new LODE Oracle");
-        require(_newLodeOracle.isSushiOracle(), "Invalid Contract");
+        if (msg.sender != admin) revert NotAdmin();
+        if (!_newLodeOracle.isSushiOracle()) revert InvalidContract();
         lodeOracle = address(_newLodeOracle);
         emit newLodeOracle(lodeOracle);
     }
@@ -215,8 +222,8 @@ contract PriceOracleProxyETH is Exponential {
      * @param _newGlpOracle The new LODE oracle contract
      */
     function _setGlpOracle(PlvGLPOracleInterface _newGlpOracle) external {
-        require(msg.sender == admin, "only the admin may set new GLP Oracle");
-        require(_newGlpOracle.isGLPOracle(), "Invalid Contract");
+        if (msg.sender != admin) revert NotAdmin();
+        if (!_newGlpOracle.isGLPOracle()) revert InvalidContract();
         glpOracleAddress = address(_newGlpOracle);
         emit newGlpOracle(glpOracleAddress);
     }
@@ -232,11 +239,11 @@ contract PriceOracleProxyETH is Exponential {
         address[] calldata sources,
         AggregatorBase[] calldata bases
     ) external {
-        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
-        require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, "mismatched data");
+        if (msg.sender != admin && msg.sender != guardian) revert NotAdminOrGuardian();
+        if (cTokenAddresses.length != sources.length || cTokenAddresses.length != bases.length) revert MismatchedData();
         for (uint256 i; i < cTokenAddresses.length;) {
             if (sources[i] != address(0)) {
-                require(msg.sender == admin, "Only the admin or guardian can clear the aggregators");
+                if (msg.sender != admin) revert NotAdmin();
             }
             aggregators[cTokenAddresses[i]] = AggregatorInfo({
                 source: AggregatorV3Interface(sources[i]),

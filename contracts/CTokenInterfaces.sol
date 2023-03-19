@@ -112,6 +112,11 @@ abstract contract CTokenStorage {
 }
 
 abstract contract CTokenInterface is CTokenStorage {
+    error NotAdmin();
+    error CanNotSweepUnderlyingToken();
+    error TOKEN_TRANSFER_IN_FAILED();
+    error TOKEN_TRANSFER_OUT_FAILED();
+
     /**
      * @notice Indicator that this is a CToken contract (for inspection)
      */

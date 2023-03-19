@@ -153,10 +153,10 @@ contract CErc20 is CToken, CErc20Interface {
      * @param token The address of the ERC-20 token to sweep
      */
     function sweepToken(EIP20NonStandardInterface token) external override {
-        require(msg.sender == admin, "CErc20::sweepToken: only admin can sweep tokens");
-        require(address(token) != underlying, "CErc20::sweepToken: can not sweep underlying token");
         uint256 balance = token.balanceOf(address(this));
         token.transfer(admin, balance);
+        if (msg.sender != admin) revert NotAdmin();
+        if (address(token) == underlying) revert CanNotSweepUnderlyingToken();
     }
 
     /**
@@ -213,7 +213,7 @@ contract CErc20 is CToken, CErc20Interface {
                 revert(0, 0)
             }
         }
-        require(success, "TOKEN_TRANSFER_IN_FAILED");
+        if (!success) revert TOKEN_TRANSFER_IN_FAILED();
 
         // Calculate the amount that was *actually* transferred
         uint balanceAfter = EIP20Interface(underlying_).balanceOf(address(this));
@@ -250,7 +250,7 @@ contract CErc20 is CToken, CErc20Interface {
                 revert(0, 0)
             }
         }
-        require(success, "TOKEN_TRANSFER_OUT_FAILED");
+        if (!success) revert TOKEN_TRANSFER_OUT_FAILED();
     }
 
     /**
@@ -259,7 +259,7 @@ contract CErc20 is CToken, CErc20Interface {
      * @dev CTokens whose underlying are not CompLike should revert here
      */
     function _delegateCompLikeTo(address compLikeDelegatee) external {
-        require(msg.sender == admin, "only the admin may set the comp-like delegate");
+        if (msg.sender != admin) revert NotAdmin();
         CompLike(underlying).delegate(compLikeDelegatee);
     }
 }

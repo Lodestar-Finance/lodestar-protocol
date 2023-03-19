@@ -15,6 +15,19 @@ import "./Whitelist.sol";
  * @author Compound
  */
 abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorReporter {
+    error Reentered();
+    error MarkerMethodReturnedFalse();
+    error TokenSeizureFailed();
+    error LIQUIDATE_SEIZE_TOO_MUCH();
+    error LIQUIDATE_COMPTROLLER_CALCULATE_AMOUNT_SEIZE_FAILED();
+    error NOT_AUTHORIZED();
+    error BorrowRateAbsurdlyHigh();
+    error SettingInterestRateModelFailed();
+    error SettingComptrollerFailed();
+    error ExchangeRateMustBeGreaterThanZero();
+    error MarketInitializedOnce();
+    error RedeemTokensInOrRedeemAmountInMustBeZero();
+
     constructor() payable {}
 
     /**
@@ -33,25 +46,23 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         string memory name_,
         string memory symbol_,
         uint8 decimals_
-        require(msg.sender == admin, "only admin may initialize the market");
-        require(accrualBlockNumber == 0 && borrowIndex == 0, "market may only be initialized once");
     ) public payable {
+        if (msg.sender != admin) revert NotAdmin();
+        if (accrualBlockNumber != 0 || borrowIndex != 0) revert MarketInitializedOnce();
 
         // Set initial exchange rate
+        if (initialExchangeRateMantissa_ <= 0) revert ExchangeRateMustBeGreaterThanZero();
         initialExchangeRateMantissa = initialExchangeRateMantissa_;
-        require(initialExchangeRateMantissa > 0, "initial exchange rate must be greater than zero.");
 
         // Set the comptroller
-        uint err = _setComptroller(comptroller_);
-        require(err == NO_ERROR, "setting comptroller failed");
+        if (_setComptroller(comptroller_) != NO_ERROR) revert SettingComptrollerFailed();
 
         // Initialize block number and borrow index (block number mocks depend on comptroller being set)
         accrualBlockNumber = getBlockNumber();
         borrowIndex = mantissaOne;
 
         // Set the interest rate model (depends on block number / borrow index)
-        err = _setInterestRateModelFresh(interestRateModel_);
-        require(err == NO_ERROR, "setting interest rate model failed");
+        if (_setInterestRateModelFresh(interestRateModel_) != NO_ERROR) revert SettingInterestRateModelFailed();
 
         name = name_;
         symbol = symbol_;
@@ -342,7 +353,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
 
         /* Calculate the current borrow interest rate */
         uint borrowRateMantissa = interestRateModel.getBorrowRate(cashPrior, borrowsPrior, reservesPrior);
-        require(borrowRateMantissa <= borrowRateMaxMantissa, "borrow rate is absurdly high");
+        if (borrowRateMantissa > borrowRateMaxMantissa) revert BorrowRateAbsurdlyHigh();
 
         /* Calculate the number of blocks elapsed since the last accrual */
         uint blockDelta = currentBlockNumber - accrualBlockNumberPrior;
@@ -472,7 +483,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      */
     function redeemBehalfInternal(uint redeemTokens, address redeemee) internal nonReentrant {
         //placeholder address for the time being pending Whitelist.sol deployment
-        require(Whitelist(0x67E57A0ec37768eaF99a364975ec4E1f98920D01).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
+        if (!Whitelist(0x67E57A0ec37768eaF99a364975ec4E1f98920D01).isWhitelisted(msg.sender)) revert NOT_AUTHORIZED();
         accrueInterest();
         //borrowFresh emits borrow-specific logs on errors, so we don't need to
         redeemFresh(payable(redeemee), redeemTokens, 0);
@@ -497,7 +508,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      * @param redeemAmountIn The number of underlying tokens to receive from redeeming cTokens (only one of redeemTokensIn or redeemAmountIn may be non-zero)
      */
     function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn) internal {
-        require(redeemTokensIn == 0 || redeemAmountIn == 0, "one of redeemTokensIn or redeemAmountIn must be zero");
+        if (redeemTokensIn != 0 && redeemAmountIn != 0) revert RedeemTokensInOrRedeemAmountInMustBeZero();
 
         /* exchangeRate = invoke Exchange Rate Stored() */
         Exp memory exchangeRate = Exp({mantissa: exchangeRateStoredInternal()});
@@ -584,7 +595,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      */
     function borrowBehalfInternal(uint borrowAmount, address borrowee) internal nonReentrant {
         //placeholder address for the time being THIS IS TESTNET WHITELIST!!! UPDATE FOR MAINNET!!!!
-        require(Whitelist(0xB371BB8c9073E84FD54e0d8697816329397E743b).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
+        if (!Whitelist(0xB371BB8c9073E84FD54e0d8697816329397E743b).isWhitelisted(msg.sender)) revert NOT_AUTHORIZED();
         accrueInterest();
         //borrowFresh emits borrow-specific logs on errors, so we don't need to
         borrowFresh(payable(borrowee), borrowAmount);
@@ -810,16 +821,16 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
             address(cTokenCollateral),
             actualRepayAmount
         );
-        require(amountSeizeError == NO_ERROR, "LIQUIDATE_COMPTROLLER_CALCULATE_AMOUNT_SEIZE_FAILED");
+        if (amountSeizeError != NO_ERROR) revert LIQUIDATE_COMPTROLLER_CALCULATE_AMOUNT_SEIZE_FAILED();
 
         /* Revert if borrower collateral token balance < seizeTokens */
-        require(cTokenCollateral.balanceOf(borrower) >= seizeTokens, "LIQUIDATE_SEIZE_TOO_MUCH");
+        if (cTokenCollateral.balanceOf(borrower) < seizeTokens) revert LIQUIDATE_SEIZE_TOO_MUCH();
 
         // If this is also the collateral, run seizeInternal to avoid re-entrancy, otherwise make an external call
         if (address(cTokenCollateral) == address(this)) {
             seizeInternal(address(this), liquidator, borrower, seizeTokens);
         } else {
-            require(cTokenCollateral.seize(liquidator, borrower, seizeTokens) == NO_ERROR, "token seizure failed");
+            if (cTokenCollateral.seize(liquidator, borrower, seizeTokens) != NO_ERROR) revert TokenSeizureFailed();
         }
 
         /* We emit a LiquidateBorrow event */
@@ -959,7 +970,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
 
         ComptrollerInterface oldComptroller = comptroller;
         // Ensure invoke comptroller.isComptroller() returns true
-        require(newComptroller.isComptroller(), "marker method returned false");
+        if (!newComptroller.isComptroller()) revert MarkerMethodReturnedFalse();
 
         // Set market's comptroller to newComptroller
         comptroller = newComptroller;
@@ -1159,7 +1170,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         oldInterestRateModel = interestRateModel;
 
         // Ensure invoke newInterestRateModel.isInterestRateModel() returns true
-        require(newInterestRateModel.isInterestRateModel(), "marker method returned false");
+        if (!newInterestRateModel.isInterestRateModel()) revert MarkerMethodReturnedFalse();
 
         // Set the interest rate model to newInterestRateModel
         interestRateModel = newInterestRateModel;
