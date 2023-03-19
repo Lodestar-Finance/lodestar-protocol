@@ -1071,7 +1071,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _initializeMarket(address cToken) internal {
-        uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
+        uint32 blockNumber = safe32(block.number, "block number exceeds 32 bits");
 
         CompMarketState storage supplyState = compSupplyState[cToken];
         CompMarketState storage borrowState = compBorrowState[cToken];
@@ -1289,7 +1289,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     function updateCompSupplyIndex(address cToken) internal {
         CompMarketState storage supplyState = compSupplyState[cToken];
         uint supplySpeed = compSupplySpeeds[cToken];
-        uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
+        uint32 blockNumber = safe32(block.number, "block number exceeds 32 bits");
         uint deltaBlocks = uint(blockNumber) - uint(supplyState.block);
         if (deltaBlocks > 0 && supplySpeed > 0) {
             uint supplyTokens = CToken(cToken).totalSupply();
@@ -1313,7 +1313,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     function updateCompBorrowIndex(address cToken, Exp memory marketBorrowIndex) internal {
         CompMarketState storage borrowState = compBorrowState[cToken];
         uint borrowSpeed = compBorrowSpeeds[cToken];
-        uint32 blockNumber = safe32(getBlockNumber(), "block number exceeds 32 bits");
+        uint32 blockNumber = safe32(block.number, "block number exceeds 32 bits");
         uint deltaBlocks = uint(blockNumber) - uint(borrowState.block);
         if (deltaBlocks > 0 && borrowSpeed > 0) {
             uint borrowAmount = div_(CToken(cToken).totalBorrows(), marketBorrowIndex);
@@ -1412,14 +1412,13 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      */
     function updateContributorRewards(address contributor) public {
         uint compSpeed = compContributorSpeeds[contributor];
-        uint blockNumber = getBlockNumber();
         uint deltaBlocks = block.number - lastContributorBlock[contributor];
         if (deltaBlocks > 0 && compSpeed > 0) {
             uint newAccrued = deltaBlocks * compSpeed;
             uint contributorAccrued = compAccrued[contributor] + newAccrued;
 
             compAccrued[contributor] = contributorAccrued;
-            lastContributorBlock[contributor] = blockNumber;
+            lastContributorBlock[contributor] = block.number;
         }
     }
 
@@ -1547,7 +1546,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
             // release storage
             delete lastContributorBlock[contributor];
         } else {
-            lastContributorBlock[contributor] = getBlockNumber();
+            lastContributorBlock[contributor] = block.number;
         }
         compContributorSpeeds[contributor] = compSpeed;
 
@@ -1573,10 +1572,6 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
             markets[address(cToken)].collateralFactorMantissa == 0 &&
             borrowGuardianPaused[address(cToken)] == true &&
             cToken.reserveFactorMantissa() == 1e18;
-    }
-
-    function getBlockNumber() public view virtual returns (uint) {
-        return block.number;
     }
 
     /**
