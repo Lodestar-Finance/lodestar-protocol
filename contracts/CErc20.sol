@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-import "./CToken.sol";
+import { CToken } from "./CToken.sol";
+import { ComptrollerInterface } from "./ComptrollerInterface.sol";
+import { InterestRateModel } from "./InterestRateModel.sol";
+import { CErc20Interface, CTokenInterface } from "./CTokenInterfaces.sol";
+import { EIP20NonStandardInterface } from "./EIP20NonStandardInterface.sol";
+import { EIP20Interface } from "./EIP20Interface.sol";
 
 interface CompLike {
     function delegate(address delegatee) external;
