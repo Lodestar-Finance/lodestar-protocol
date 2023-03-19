@@ -1354,14 +1354,14 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         }
 
         // Calculate change in the cumulative sum of the COMP per cToken accrued
-        Double memory deltaIndex = Double({mantissa: sub_(supplyIndex, supplierIndex)});
+        Double memory deltaIndex = Double({mantissa: supplyIndex - supplierIndex});
 
         uint supplierTokens = CToken(cToken).balanceOf(supplier);
 
         // Calculate COMP accrued: cTokenAmount * accruedPerCToken
         uint supplierDelta = mul_(supplierTokens, deltaIndex);
 
-        uint supplierAccrued = add_(compAccrued[supplier], supplierDelta);
+        uint supplierAccrued = compAccrued[supplier] + supplierDelta;
         compAccrued[supplier] = supplierAccrued;
 
         emit DistributedSupplierComp(CToken(cToken), supplier, supplierDelta, supplyIndex);
@@ -1393,14 +1393,14 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         }
 
         // Calculate change in the cumulative sum of the COMP per borrowed unit accrued
-        Double memory deltaIndex = Double({mantissa: sub_(borrowIndex, borrowerIndex)});
+        Double memory deltaIndex = Double({mantissa: borrowIndex - borrowerIndex});
 
         uint borrowerAmount = div_(CToken(cToken).borrowBalanceStored(borrower), marketBorrowIndex);
 
         // Calculate COMP accrued: cTokenAmount * accruedPerBorrowedUnit
         uint borrowerDelta = mul_(borrowerAmount, deltaIndex);
 
-        uint borrowerAccrued = add_(compAccrued[borrower], borrowerDelta);
+        uint borrowerAccrued = compAccrued[borrower] + borrowerDelta;
         compAccrued[borrower] = borrowerAccrued;
 
         emit DistributedBorrowerComp(CToken(cToken), borrower, borrowerDelta, borrowIndex);
