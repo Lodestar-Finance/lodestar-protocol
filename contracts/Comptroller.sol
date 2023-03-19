@@ -139,10 +139,11 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         uint len = cTokens.length;
 
         uint[] memory results = new uint[](len);
-        for (uint i = 0; i < len; i++) {
+        for (uint i; i < len;) {
             CToken cToken = CToken(cTokens[i]);
 
             results[i] = uint(addToMarketInternal(cToken, msg.sender));
+            unchecked { ++i; }
         }
 
         return results;
@@ -219,11 +220,13 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         CToken[] memory userAssetList = accountAssets[msg.sender];
         uint len = userAssetList.length;
         uint assetIndex = len;
-        for (uint i = 0; i < len; i++) {
+        for (uint i; i < len;) {
             if (userAssetList[i] == cToken) {
                 assetIndex = i;
                 break;
             }
+
+            unchecked { ++i; }
         }
 
         // We *must* have found the asset in the list or our redundant data structure is broken
@@ -791,7 +794,8 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
         // For each asset the account is in
         CToken[] memory assets = accountAssets[account];
-        for (uint i = 0; i < assets.length; i++) {
+        uint256 len = assets.length;
+        for (uint i; i < len;) {
             CToken asset = assets[i];
 
             // Read the balances and exchange rate from the cToken
@@ -843,6 +847,8 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
                     vars.sumBorrowPlusEffects
                 );
             }
+
+            unchecked { ++i; }
         }
 
         // These are safe, as the underflow condition is checked first
@@ -1034,8 +1040,11 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _addMarketInternal(address cToken) internal {
-        for (uint i = 0; i < allMarkets.length; i++) {
             require(allMarkets[i] != CToken(cToken), "market already added");
+        uint256 len = allMarkets.length;
+        for (uint i; i < len;) {
+
+            unchecked { ++i; }
         }
         allMarkets.push(CToken(cToken));
     }
@@ -1082,9 +1091,11 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
         require(numMarkets != 0 && numMarkets == numBorrowCaps, "invalid input");
 
-        for (uint i = 0; i < numMarkets; i++) {
+        for (uint i; i < numMarkets;) {
             borrowCaps[address(cTokens[i])] = newBorrowCaps[i];
             emit NewBorrowCap(cTokens[i], newBorrowCaps[i]);
+
+            unchecked { ++i; }
         }
     }
 
@@ -1122,9 +1133,11 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
         require(numMarkets != 0 && numMarkets == numSupplyCaps, "invalid input");
 
-        for (uint i = 0; i < numMarkets; i++) {
+        for (uint i; i < numMarkets;) {
             supplyCaps[address(cTokens[i])] = newSupplyCaps[i];
             emit NewSupplyCap(cTokens[i], newSupplyCaps[i]);
+
+            unchecked { ++i; }
         }
     }
 
@@ -1422,25 +1435,35 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param suppliers Whether or not to claim COMP earned by supplying
      */
     function claimComp(address[] memory holders, CToken[] memory cTokens, bool borrowers, bool suppliers) public {
-        for (uint i = 0; i < cTokens.length; i++) {
+        uint256 cTokensLen = cTokens.length;
+        uint256 HoldersLen = holders.length;
+        for (uint i; i < cTokensLen;) {
             CToken cToken = cTokens[i];
             require(markets[address(cToken)].isListed, "market must be listed");
             if (borrowers == true) {
                 Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
                 updateCompBorrowIndex(address(cToken), borrowIndex);
-                for (uint j = 0; j < holders.length; j++) {
+                for (uint j; j < HoldersLen;) {
                     distributeBorrowerComp(address(cToken), holders[j], borrowIndex);
+
+                    unchecked { ++j; }
                 }
             }
             if (suppliers == true) {
                 updateCompSupplyIndex(address(cToken));
-                for (uint j = 0; j < holders.length; j++) {
+                for (uint j; j < HoldersLen;) {
                     distributeSupplierComp(address(cToken), holders[j]);
+
+                    unchecked { ++j; }
                 }
             }
+
+            unchecked { ++i; }
         }
-        for (uint j = 0; j < holders.length; j++) {
+        for (uint j; j < HoldersLen;) {
             compAccrued[holders[j]] = grantCompInternal(holders[j], compAccrued[holders[j]]);
+
+            unchecked { ++j; }
         }
     }
 
@@ -1491,8 +1514,10 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
             "Comptroller::_setCompSpeeds invalid input"
         );
 
-        for (uint i = 0; i < numTokens; ++i) {
+        for (uint i; i < numTokens;) {
             setCompSpeedInternal(cTokens[i], supplySpeeds[i], borrowSpeeds[i]);
+
+            unchecked { ++i; }
         }
     }
 

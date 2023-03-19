@@ -234,7 +234,7 @@ contract PriceOracleProxyETH is Exponential {
     ) external {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
         require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, "mismatched data");
-        for (uint256 i = 0; i < cTokenAddresses.length; i++) {
+        for (uint256 i; i < cTokenAddresses.length;) {
             if (sources[i] != address(0)) {
                 require(msg.sender == admin, "Only the admin or guardian can clear the aggregators");
             }
@@ -243,6 +243,8 @@ contract PriceOracleProxyETH is Exponential {
                 base: bases[i]
             });
             emit AggregatorUpdated(cTokenAddresses[i], sources[i], bases[i]);
+
+            unchecked { ++i; }
         }
     }
 }

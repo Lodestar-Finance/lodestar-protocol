@@ -126,8 +126,11 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         require(state(proposalId) == ProposalState.Succeeded, "GovernorBravo::queue: proposal can only be queued if it is succeeded");
         Proposal storage proposal = proposals[proposalId];
         uint eta = add256(block.timestamp, timelock.delay());
-        for (uint i = 0; i < proposal.targets.length; i++) {
+        uint256 len = proposal.targets.length;
+        for (uint i; i < len;) {
             queueOrRevertInternal(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], eta);
+
+            unchecked { ++i; }
         }
         proposal.eta = eta;
         emit ProposalQueued(proposalId, eta);
@@ -146,8 +149,11 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         require(state(proposalId) == ProposalState.Queued, "GovernorBravo::execute: proposal can only be executed if it is queued");
         Proposal storage proposal = proposals[proposalId];
         proposal.executed = true;
-        for (uint i = 0; i < proposal.targets.length; i++) {
+        uint256 len = proposal.targets.length;
+        for (uint i; i < len;) {
             timelock.executeTransaction{value: proposal.values[i]}(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+
+            unchecked { ++i; }
         }
         emit ProposalExecuted(proposalId);
     }
@@ -173,8 +179,10 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV2, GovernorBravoE
         }
 
         proposal.canceled = true;
-        for (uint i = 0; i < proposal.targets.length; i++) {
+        uint256 len = proposal.targets.length;
+        for (uint i; i < len;) {
             timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+            unchecked { ++i; }
         }
 
         emit ProposalCanceled(proposalId);
