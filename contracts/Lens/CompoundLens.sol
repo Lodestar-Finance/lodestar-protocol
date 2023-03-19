@@ -40,13 +40,13 @@ interface GovernorBravoInterface {
     }
     struct Proposal {
         uint id;
-        address proposer;
         uint eta;
         uint startBlock;
         uint endBlock;
         uint forVotes;
         uint againstVotes;
         uint abstainVotes;
+        address proposer;
         bool canceled;
         bool executed;
     }
@@ -75,8 +75,8 @@ contract CompoundLens {
         uint totalReserves;
         uint totalSupply;
         uint totalCash;
-        bool isListed;
         uint collateralFactorMantissa;
+        bool isListed;
         address underlyingAssetAddress;
         uint cTokenDecimals;
         uint underlyingDecimals;
@@ -173,8 +173,8 @@ contract CompoundLens {
                 totalReserves: cToken.totalReserves(),
                 totalSupply: cToken.totalSupply(),
                 totalCash: cToken.getCash(),
-                isListed: isListed,
                 collateralFactorMantissa: collateralFactorMantissa,
+                isListed: isListed,
                 underlyingAssetAddress: underlyingAssetAddress,
                 cTokenDecimals: cToken.decimals(),
                 underlyingDecimals: underlyingDecimals,
@@ -335,7 +335,6 @@ contract CompoundLens {
 
     struct GovProposal {
         uint proposalId;
-        address proposer;
         uint eta;
         address[] targets;
         uint[] values;
@@ -345,6 +344,7 @@ contract CompoundLens {
         uint endBlock;
         uint forVotes;
         uint againstVotes;
+        address proposer;
         bool canceled;
         bool executed;
     }
@@ -352,22 +352,22 @@ contract CompoundLens {
     function setProposal(GovProposal memory res, GovernorAlpha governor, uint proposalId) internal view {
         (
             ,
-            address proposer,
             uint eta,
             uint startBlock,
             uint endBlock,
             uint forVotes,
             uint againstVotes,
+            address proposer,
             bool canceled,
             bool executed
         ) = governor.proposals(proposalId);
         res.proposalId = proposalId;
-        res.proposer = proposer;
         res.eta = eta;
         res.startBlock = startBlock;
         res.endBlock = endBlock;
         res.forVotes = forVotes;
         res.againstVotes = againstVotes;
+        res.proposer = proposer;
         res.canceled = canceled;
         res.executed = executed;
     }
@@ -406,7 +406,6 @@ contract CompoundLens {
 
     struct GovBravoProposal {
         uint proposalId;
-        address proposer;
         uint eta;
         address[] targets;
         uint[] values;
@@ -417,6 +416,7 @@ contract CompoundLens {
         uint forVotes;
         uint againstVotes;
         uint abstainVotes;
+        address proposer;
         bool canceled;
         bool executed;
     }

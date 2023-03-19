@@ -100,9 +100,6 @@ abstract contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorag
         /// @notice Unique id for looking up a proposal
         uint id;
 
-        /// @notice Creator of the proposal
-        address proposer;
-
         /// @notice The timestamp that the proposal will be available for execution, set once the vote succeeds
         uint eta;
 
@@ -132,6 +129,9 @@ abstract contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorag
 
         /// @notice Current number of votes for abstaining for this proposal
         uint abstainVotes;
+
+        /// @notice Creator of the proposal
+        address proposer;
 
         /// @notice Flag marking whether the proposal has been canceled
         bool canceled;
