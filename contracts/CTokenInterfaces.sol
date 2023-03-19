@@ -6,7 +6,7 @@ import "./InterestRateModel.sol";
 import "./EIP20NonStandardInterface.sol";
 import "./ErrorReporter.sol";
 
-contract CTokenStorage {
+abstract contract CTokenStorage {
     /**
      * @dev Guard variable for re-entrancy checks
      */

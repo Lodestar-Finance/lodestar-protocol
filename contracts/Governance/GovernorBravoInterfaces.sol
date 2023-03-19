@@ -2,7 +2,7 @@
 pragma solidity ^0.8.10;
 
 
-contract GovernorBravoEvents {
+abstract contract GovernorBravoEvents {
     /// @notice An event emitted when a new proposal is created
     event ProposalCreated(uint id, address proposer, address[] targets, uint[] values, string[] signatures, bytes[] calldatas, uint startBlock, uint endBlock, string description);
 
@@ -48,7 +48,7 @@ contract GovernorBravoEvents {
     event WhitelistGuardianSet(address oldGuardian, address newGuardian);
 }
 
-contract GovernorBravoDelegatorStorage {
+abstract contract GovernorBravoDelegatorStorage {
     /// @notice Administrator for this contract
     address public admin;
 
@@ -66,7 +66,7 @@ contract GovernorBravoDelegatorStorage {
  * contract which implements GovernorBravoDelegateStorageV1 and following the naming convention
  * GovernorBravoDelegateStorageVX.
  */
-contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
+abstract contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
 
     /// @notice The delay before voting on a proposal may take place, once proposed, in blocks
     uint public votingDelay;
@@ -168,7 +168,7 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     }
 }
 
-contract GovernorBravoDelegateStorageV2 is GovernorBravoDelegateStorageV1 {
+abstract contract GovernorBravoDelegateStorageV2 is GovernorBravoDelegateStorageV1 {
     /// @notice Stores the expiration of account whitelist status as a timestamp
     mapping (address => uint) public whitelistAccountExpirations;
 

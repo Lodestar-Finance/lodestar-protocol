@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import "./CToken.sol";
 import "./PriceOracle.sol";
 
-contract UnitrollerAdminStorage {
+abstract contract UnitrollerAdminStorage {
     /**
      * @notice Administrator for this contract
      */
@@ -26,7 +26,7 @@ contract UnitrollerAdminStorage {
     address public pendingComptrollerImplementation;
 }
 
-contract ComptrollerV1Storage is UnitrollerAdminStorage {
+abstract contract ComptrollerV1Storage is UnitrollerAdminStorage {
     /**
      * @notice Oracle which gives the price of any given asset
      */
@@ -53,7 +53,7 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     mapping(address => CToken[]) public accountAssets;
 }
 
-contract ComptrollerV2Storage is ComptrollerV1Storage {
+abstract contract ComptrollerV2Storage is ComptrollerV1Storage {
     struct Market {
         // Whether or not this market is listed
         bool isListed;
@@ -87,7 +87,7 @@ contract ComptrollerV2Storage is ComptrollerV1Storage {
     mapping(address => bool) public borrowGuardianPaused;
 }
 
-contract ComptrollerV3Storage is ComptrollerV2Storage {
+abstract contract ComptrollerV3Storage is ComptrollerV2Storage {
     struct CompMarketState {
         // The market's last updated compBorrowIndex or compSupplyIndex
         uint224 index;
@@ -120,7 +120,7 @@ contract ComptrollerV3Storage is ComptrollerV2Storage {
     mapping(address => uint) public compAccrued;
 }
 
-contract ComptrollerV4Storage is ComptrollerV3Storage {
+abstract contract ComptrollerV4Storage is ComptrollerV3Storage {
     // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
     address public borrowCapGuardian;
 
@@ -128,7 +128,7 @@ contract ComptrollerV4Storage is ComptrollerV3Storage {
     mapping(address => uint) public borrowCaps;
 }
 
-contract ComptrollerV5Storage is ComptrollerV4Storage {
+abstract contract ComptrollerV5Storage is ComptrollerV4Storage {
     /// @notice The portion of COMP that each contributor receives per block
     mapping(address => uint) public compContributorSpeeds;
 
@@ -136,7 +136,7 @@ contract ComptrollerV5Storage is ComptrollerV4Storage {
     mapping(address => uint) public lastContributorBlock;
 }
 
-contract ComptrollerV6Storage is ComptrollerV5Storage {
+abstract contract ComptrollerV6Storage is ComptrollerV5Storage {
     /// @notice The rate at which comp is distributed to the corresponding borrow market (per block)
     mapping(address => uint) public compBorrowSpeeds;
 
@@ -144,7 +144,7 @@ contract ComptrollerV6Storage is ComptrollerV5Storage {
     mapping(address => uint) public compSupplySpeeds;
 }
 
-contract ComptrollerV7Storage is ComptrollerV6Storage {
+abstract contract ComptrollerV7Storage is ComptrollerV6Storage {
     /// @notice Flag indicating whether the function to fix COMP accruals has been executed (RE: proposal 62 bug)
     bool public proposal65FixExecuted;
 
@@ -152,7 +152,7 @@ contract ComptrollerV7Storage is ComptrollerV6Storage {
     mapping(address => uint) public compReceivable;
 }
 
-contract ComptrollerV8Storage is ComptrollerV7Storage {
+abstract contract ComptrollerV8Storage is ComptrollerV7Storage {
     // @notice The supplyCapGuardian can set supplyCaps to any number for any market. Lowering the supply cap could disable minting on the given market.
     address public supplyCapGuardian;
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
 
-contract ComptrollerErrorReporter {
+abstract contract ComptrollerErrorReporter {
     enum Error {
         NO_ERROR,
         UNAUTHORIZED,
@@ -71,7 +71,7 @@ contract ComptrollerErrorReporter {
     }
 }
 
-contract TokenErrorReporter {
+abstract contract TokenErrorReporter {
     uint public constant NO_ERROR = 0; // support legacy return codes
 
     error TransferComptrollerRejection(uint256 errorCode);
