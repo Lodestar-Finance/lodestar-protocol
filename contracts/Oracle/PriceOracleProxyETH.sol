@@ -9,12 +9,10 @@ import "../CToken.sol";
 import "../EIP20Interface.sol";
 import "./Interfaces/PlvGLPOracleInterface.sol";
 import "../Exponential.sol";
-import "../SafeMath.sol";
 import "./SushiOracle.sol";
 import "./Interfaces/SushiOracleInterface.sol";
 
 contract PriceOracleProxyETH is Exponential {
-    using SafeMath for uint256;
 
     bool public constant isPriceOracle = true;
 

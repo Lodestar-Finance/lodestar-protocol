@@ -1,7 +1,5 @@
 pragma solidity ^0.8.10;
 
-import "./SafeMath.sol";
-
 interface ERC20Base {
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -27,8 +25,6 @@ abstract contract ERC20NS is ERC20Base {
  *  See https://github.com/ethereum/EIPs/issues/20
  */
 abstract contract StandardToken is ERC20 {
-    using SafeMath for uint256;
-
     string public name;
     string public symbol;
     uint8 public decimals;
@@ -45,16 +41,16 @@ abstract contract StandardToken is ERC20 {
     }
 
     function transfer(address dst, uint256 amount) override virtual external returns (bool) {
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(amount, "Insufficient balance");
-        balanceOf[dst] = balanceOf[dst].add(amount, "Balance overflow");
+        balanceOf[msg.sender] = balanceOf[msg.sender] - amount;
+        balanceOf[dst] = balanceOf[dst] + amount;
         emit Transfer(msg.sender, dst, amount);
         return true;
     }
 
     function transferFrom(address src, address dst, uint256 amount) override virtual external returns (bool) {
-        allowance[src][msg.sender] = allowance[src][msg.sender].sub(amount, "Insufficient allowance");
-        balanceOf[src] = balanceOf[src].sub(amount, "Insufficient balance");
-        balanceOf[dst] = balanceOf[dst].add(amount, "Balance overflow");
+        allowance[src][msg.sender] = allowance[src][msg.sender] - amount;
+        balanceOf[src] = balanceOf[src] - amount;
+        balanceOf[dst] = balanceOf[dst] + amount;
         emit Transfer(src, dst, amount);
         return true;
     }
@@ -72,8 +68,6 @@ abstract contract StandardToken is ERC20 {
  *  See https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
  */
 contract NonStandardToken is ERC20NS {
-    using SafeMath for uint256;
-
     string public name;
     uint8 public decimals;
     string public symbol;
@@ -90,15 +84,15 @@ contract NonStandardToken is ERC20NS {
     }
 
     function transfer(address dst, uint256 amount) override external {
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(amount, "Insufficient balance");
-        balanceOf[dst] = balanceOf[dst].add(amount, "Balance overflow");
+        balanceOf[msg.sender] = balanceOf[msg.sender] - amount;
+        balanceOf[dst] = balanceOf[dst] + amount;
         emit Transfer(msg.sender, dst, amount);
     }
 
     function transferFrom(address src, address dst, uint256 amount) override external {
-        allowance[src][msg.sender] = allowance[src][msg.sender].sub(amount, "Insufficient allowance");
-        balanceOf[src] = balanceOf[src].sub(amount, "Insufficient balance");
-        balanceOf[dst] = balanceOf[dst].add(amount, "Balance overflow");
+        allowance[src][msg.sender] = allowance[src][msg.sender] - amount;
+        balanceOf[src] = balanceOf[src] - amount;
+        balanceOf[dst] = balanceOf[dst] + amount;
         emit Transfer(src, dst, amount);
     }
 
