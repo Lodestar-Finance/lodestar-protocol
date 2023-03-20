@@ -182,7 +182,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
             return Error.MARKET_NOT_LISTED;
         }
 
-        if (marketToJoin.accountMembership[borrower] == true) {
+        if (marketToJoin.accountMembership[borrower]) {
             // already joined
             return Error.NO_ERROR;
         }
@@ -1446,7 +1446,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         for (uint i; i < cTokensLen;) {
             CToken cToken = cTokens[i];
             if (!markets[address(cToken)].isListed) revert MarketNotListed();
-            if (borrowers == true) {
+            if (borrowers) {
                 Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
                 updateCompBorrowIndex(address(cToken), borrowIndex);
                 for (uint j; j < HoldersLen;) {
@@ -1455,7 +1455,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
                     unchecked { ++j; }
                 }
             }
-            if (suppliers == true) {
+            if (suppliers) {
                 updateCompSupplyIndex(address(cToken));
                 for (uint j; j < HoldersLen;) {
                     distributeSupplierComp(address(cToken), holders[j]);
@@ -1562,7 +1562,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     function isDeprecated(CToken cToken) public view returns (bool) {
         return
             markets[address(cToken)].collateralFactorMantissa == 0 &&
-            borrowGuardianPaused[address(cToken)] == true &&
+            borrowGuardianPaused[address(cToken)] &&
             cToken.reserveFactorMantissa() == 1e18;
     }
 
