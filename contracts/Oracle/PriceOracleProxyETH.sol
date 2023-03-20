@@ -164,17 +164,13 @@ contract PriceOracleProxyETH is ExponentialNoError {
     /**
      * @notice Get L2 sequencer status from Chainlink sequencer aggregator
      * @param sequencer the address of the Chainlink sequencer aggregator ("sequencerAddress" in constructor)
-     * @return the L2 sequencer status as a boolean (true = the sequencer is up, false = the sequencer is down)
+     * @return status the L2 sequencer status as a boolean (true = the sequencer is up, false = the sequencer is down)
      */
-    function getSequencerStatus(address sequencer) internal view returns (bool) {
-        bool status;
+    function getSequencerStatus(address sequencer) internal view returns (bool status) {
         (, int256 answer, , , ) = AggregatorV3Interface(sequencer).latestRoundData();
         if (answer == 0) {
             status = true;
-        } else if (answer == 1) {
-            status = false;
         }
-        return status;
     }
 
     /*** Admin or guardian functions ***/
