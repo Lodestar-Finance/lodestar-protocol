@@ -18,6 +18,8 @@ contract PriceOracleProxyETH is Exponential {
 
     bool public constant isPriceOracle = true;
 
+    uint256 private constant GRACE_PERIOD_TIME = 3600;
+
     /// @notice ChainLink aggregator base, currently support USD and ETH
     enum AggregatorBase {
         USD,
@@ -164,8 +166,9 @@ contract PriceOracleProxyETH is Exponential {
      */
     function getSequencerStatus(address sequencer) internal view returns (bool) {
         bool status;
-        (, int256 answer, , , ) = AggregatorV3Interface(sequencer).latestRoundData();
-        if (answer == 0) {
+        (, int256 answer, uint256 startedAt, , ) = AggregatorV3Interface(sequencer).latestRoundData();
+
+        if (answer == 0 && block.timestamp - startedAt > GRACE_PERIOD_TIME) {
             status = true;
         } else if (answer == 1) {
             status = false;
