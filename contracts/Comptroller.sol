@@ -103,8 +103,11 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     // No collateralFactorMantissa may exceed this value
     uint internal constant collateralFactorMaxMantissa = 0.9e18; // 0.9
 
-    constructor() {
+    address private LODE;
+
+    constructor(address _whitelist, address _lode) {
         admin = msg.sender;
+        LODE = _lode;
     }
 
     /*** Assets You Are In ***/
@@ -499,6 +502,25 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
             maxAssets = maxAssets;
+        }
+    }
+
+    function enableLooping(address looper) external override returns (bool) {
+        require(tx.origin == msg.sender && msg.sender == looper, "!EoA/UNAUTHORIZED");
+        require(looper != address(0), "INVALID ADDRESS");
+        loopEnabled[looper] = true;
+        if (!loopEnabled[looper]) {
+            revert("FAILED");
+        } else {
+            return true;
+        }
+    }
+
+    function isLoopingEnabled(address looper) external view override returns (bool) {
+        if (loopEnabled[looper]) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -1548,6 +1570,6 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @notice THIS IS THE TESTNET LODE ADDRESS!!!
      */
     function getCompAddress() public view virtual returns (address) {
-        return 0xF19547f9ED24aA66b03c3a552D181Ae334FBb8DB;
+        return LODE;
     }
 }

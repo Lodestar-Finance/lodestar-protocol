@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.10;
 
-import "./OpenZeppelin/Ownable.sol";
+import "./OpenZeppelin/Ownable2Step.sol";
 
-contract Whitelist is Ownable {
+contract Whitelist is Ownable2Step {
     mapping(address => bool) public isWhitelisted;
 
     function updateWhitelist(

@@ -158,4 +158,6 @@ contract ComptrollerV8Storage is ComptrollerV7Storage {
 
     // @notice Supply caps enforced by supplyAllowed for each cToken address. Defaults to zero which corresponds to unlimited minting.
     mapping(address => uint) public supplyCaps;
+
+    mapping(address => bool) public loopEnabled;
 }
