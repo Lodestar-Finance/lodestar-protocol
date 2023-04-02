@@ -105,7 +105,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
     address private LODE;
 
-    constructor(address _whitelist, address _lode) {
+    constructor(address _lode) {
         admin = msg.sender;
         LODE = _lode;
     }
