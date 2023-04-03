@@ -103,11 +103,8 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     // No collateralFactorMantissa may exceed this value
     uint internal constant collateralFactorMaxMantissa = 0.9e18; // 0.9
 
-    address private LODE;
-
     constructor(address _lode) {
         admin = msg.sender;
-        LODE = _lode;
     }
 
     /*** Assets You Are In ***/
@@ -1567,9 +1564,8 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
     /**
      * @notice Return the address of the COMP token
      * @return The address of COMP
-     * @notice THIS IS THE TESTNET LODE ADDRESS!!!
      */
     function getCompAddress() public view virtual returns (address) {
-        return LODE;
+        return 0xF19547f9ED24aA66b03c3a552D181Ae334FBb8DB;
     }
 }
