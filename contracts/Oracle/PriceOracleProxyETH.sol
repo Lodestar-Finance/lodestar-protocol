@@ -131,7 +131,8 @@ contract PriceOracleProxyETH is Exponential {
      * @return The price
      */
     function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint256) {
-        (, int256 price, , , ) = aggregator.latestRoundData();
+        (uint80 roundId, int256 price, uint startedAt, uint updatedAt, uint80 answeredInRound) = aggregator.latestRoundData();
+        require(roundId == answeredInRound && startedAt == updatedAt, "Price not fresh");
         require(price > 0, "invalid price");
 
         // Extend the decimals to 1e18.
