@@ -35,8 +35,6 @@ contract PriceOracleProxyETH is Exponential {
     /// @notice Ether cToken address
     address public letherAddress;
 
-    address public lether2Address = 0xcb213609Df465812be43aBc3e47079576982fc96;
-
     /// @notice plvGLP cToken address
     address public lplvGLPAddress;
 
@@ -99,7 +97,7 @@ contract PriceOracleProxyETH is Exponential {
     function getUnderlyingPrice(CToken cToken) public view returns (uint256) {
         address cTokenAddress = address(cToken);
         AggregatorInfo memory aggregatorInfo = aggregators[cTokenAddress];
-        if (cTokenAddress == letherAddress || cTokenAddress == lether2Address) {
+        if (cTokenAddress == letherAddress) {
             uint256 price = 1e18;
             return price;
         } else if (cTokenAddress == lplvGLPAddress) {
