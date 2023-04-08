@@ -104,6 +104,30 @@ contract CEther is CToken {
     }
 
     /**
+     * @notice Sender borrows on behalf of another user. Sender must be approved by Whitelist and user
+     * @notice must enable this feature manually.
+     * @dev Reverts upon any failure
+     * @param borrowAmount the amount to borrow
+     * @param borrowee the account to borrow for
+     */
+    function borrowBehalf(uint borrowAmount, address borrowee) external returns (uint) {
+        borrowBehalfInternal(borrowAmount, borrowee);
+        return NO_ERROR;
+    }
+
+    /**
+     * @notice Sender redeems on behalf of another user. Sender must be approved by Whitelist and user
+     * @notice must enable this feature manually.
+     * @dev Reverts upon any failure
+     * @param redeemTokens the amount to redeem
+     * @param redeemee the account to redeem for
+     */
+    function redeemBehalf(uint redeemTokens, address redeemee) external returns (uint) {
+        redeemBehalfInternal(redeemTokens, redeemee);
+        return NO_ERROR;
+    }
+
+    /**
      * @notice The sender liquidates the borrowers collateral.
      *  The collateral seized is transferred to the liquidator.
      * @dev Reverts upon any failure
