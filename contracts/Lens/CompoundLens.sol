@@ -508,14 +508,13 @@ contract CompoundLens {
         uint allocated = sub(total, balance, "sub allocated");
 
         emit lodeMetaData(balance, allocated);
-
-        return
-            CompBalanceMetadataExt({
-                balance: balance,
-                votes: uint256(comp.getCurrentVotes(account)),
-                delegate: comp.delegates(account),
-                allocated: allocated
-            });
+        
+        return CompBalanceMetadataExt({
+            balance: balance,
+            votes: uint256(comp.getCurrentVotes(account)),
+            delegate: comp.delegates(account),
+            allocated: allocated
+        });
     }
 
     struct CompVotes {
