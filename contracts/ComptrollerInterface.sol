@@ -33,6 +33,10 @@ abstract contract ComptrollerInterface {
         uint repayAmount,
         uint borrowerIndex) virtual external;
 
+    function enableLooping(address looper) virtual external returns (bool);
+
+    function isLoopingEnabled(address looper) virtual external view returns (bool);
+
     function liquidateBorrowAllowed(
         address cTokenBorrowed,
         address cTokenCollateral,

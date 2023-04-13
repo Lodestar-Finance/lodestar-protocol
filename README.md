@@ -273,5 +273,3 @@ Discussion
 For any concerns with the protocol, open an issue or visit us on [Discord](https://discord.gg/UDksEfzNpB) to discuss.
 
 For security concerns, please email [dev@lodestarfinanceio](mailto:dev@lodestarfinance.io).
-
-
