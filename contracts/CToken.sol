@@ -581,8 +581,8 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      * @param borrowee the user address to be borrowed for
      */
     function borrowBehalfInternal(uint borrowAmount, address borrowee) internal nonReentrant {
-        require(comptroller.isLoopingEnabled(borrowee), "NOT ENABLED");
-        require(Whitelist(0x609cd6758e0b344e74172Dc5adcCb8Ca3c610ed0).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
+        //require(comptroller.isLoopingEnabled(borrowee), "NOT ENABLED");
+        //require(Whitelist(0x609cd6758e0b344e74172Dc5adcCb8Ca3c610ed0).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
         accrueInterest();
         //borrowFresh emits borrow-specific logs on errors, so we don't need to
         borrowFresh(payable(borrowee), borrowAmount);
