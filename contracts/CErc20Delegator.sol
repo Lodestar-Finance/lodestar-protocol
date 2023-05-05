@@ -115,7 +115,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
      */
     function redeemBehalf(uint redeemTokens, address redeemee) external override returns (uint) {
         bytes memory data = delegateToImplementation(
-            abi.encodeWithSignature("redeemBehalf(uint256, address)", redeemTokens, redeemee)
+            abi.encodeWithSignature("redeemBehalf(uint, address)", redeemTokens, redeemee)
         );
         return abi.decode(data, (uint));
     }
@@ -151,7 +151,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
      */
     function borrowBehalf(uint borrowAmount, address borrowee) external override returns (uint) {
         bytes memory data = delegateToImplementation(
-            abi.encodeWithSignature("borrowBehalf(uint256, address)", borrowAmount, borrowee)
+            abi.encodeWithSignature("borrowBehalf(uint, address)", borrowAmount, borrowee)
         );
         return abi.decode(data, (uint));
     }
