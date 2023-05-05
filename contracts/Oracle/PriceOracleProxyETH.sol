@@ -131,7 +131,8 @@ contract PriceOracleProxyETH is Exponential {
      * @return The price
      */
     function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint256) {
-        (uint80 roundId, int256 price, uint startedAt, uint updatedAt, uint80 answeredInRound) = aggregator.latestRoundData();
+        (uint80 roundId, int256 price, uint startedAt, uint updatedAt, uint80 answeredInRound) = aggregator
+            .latestRoundData();
         require(roundId == answeredInRound && startedAt == updatedAt, "Price not fresh");
         require(price > 0, "invalid price");
 
@@ -179,26 +180,9 @@ contract PriceOracleProxyETH is Exponential {
      * @param poolAddress the address of the LODE token contract
      * @return the price of LODE in wei
      */
-    function getLodePrice(address poolAddress) public view returns (uint256){
+    function getLodePrice(address poolAddress) public view returns (uint256) {
         uint256 price = SushiOracleInterface(poolAddress).price();
         return price;
-    }
-
-    /**
-     * @notice Get L2 sequencer status from Chainlink sequencer aggregator
-     * @param sequencer the address of the Chainlink sequencer aggregator ("sequencerAddress" in constructor)
-     * @return the L2 sequencer status as a boolean (true = the sequencer is up, false = the sequencer is down)
-     */
-    function getSequencerStatus(address sequencer) internal view returns (bool) {
-        bool status;
-        (, int256 answer, , , ) = AggregatorV3Interface(sequencer).latestRoundData();
-        if (answer == 0) {
-            status = true;
-        }
-        else if (answer == 1) {
-            status = false;
-        }
-        return status;
     }
 
     /*** Admin or guardian functions ***/
@@ -209,13 +193,12 @@ contract PriceOracleProxyETH is Exponential {
     event newLodeOracle(address newLodeOracle);
     event newGlpOracle(address newGlpOracle);
 
-
     /**
      * @notice Set guardian for price oracle proxy
      * @param _guardian The new guardian
      */
     function _setGuardian(address _guardian) external {
-        require(msg.sender == admin, 'only the admin may set new guardian');
+        require(msg.sender == admin, "only the admin may set new guardian");
         guardian = _guardian;
         emit SetGuardian(guardian);
     }
@@ -225,15 +208,9 @@ contract PriceOracleProxyETH is Exponential {
      * @param _admin The new admin
      */
     function _setAdmin(address _admin) external {
-        require(msg.sender == admin, 'only the admin may set new admin');
+        require(msg.sender == admin, "only the admin may set new admin");
         admin = _admin;
         emit SetAdmin(admin);
-    }
-
-    function _setLodeOracle(address _newLodeOracle) external {
-        require(msg.sender == admin, 'only the admin may set new admin');
-        lodeOracle = _newLodeOracle;
-        emit newLodeOracle(lodeOracle);
     }
 
     /**
@@ -269,11 +246,11 @@ contract PriceOracleProxyETH is Exponential {
         address[] calldata sources,
         AggregatorBase[] calldata bases
     ) external {
-        require(msg.sender == admin || msg.sender == guardian, 'only the admin or guardian may set the aggregators');
-        require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, 'mismatched data');
+        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
+        require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, "mismatched data");
         for (uint256 i = 0; i < cTokenAddresses.length; i++) {
             if (sources[i] != address(0)) {
-                require(msg.sender == admin, 'Only the admin or guardian can clear the aggregators');
+                require(msg.sender == admin, "Only the admin or guardian can clear the aggregators");
             }
             aggregators[cTokenAddresses[i]] = AggregatorInfo({
                 source: AggregatorV3Interface(sources[i]),

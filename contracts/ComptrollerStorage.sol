@@ -145,7 +145,6 @@ contract ComptrollerV6Storage is ComptrollerV5Storage {
 }
 
 contract ComptrollerV7Storage is ComptrollerV6Storage {
-
     /// @notice Accounting storage mapping account addresses to how much COMP they owe the protocol.
     mapping(address => uint) public compReceivable;
 }
@@ -158,4 +157,10 @@ contract ComptrollerV8Storage is ComptrollerV7Storage {
     mapping(address => uint) public supplyCaps;
 
     mapping(address => bool) public loopEnabled;
+}
+
+contract ComptrollerV9Storage is ComptrollerV8Storage {
+    address public reserveGuardian;
+
+    address public speedGuardian;
 }

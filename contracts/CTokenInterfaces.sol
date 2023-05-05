@@ -109,6 +109,11 @@ contract CTokenStorage {
      * @notice Share of seized collateral that is added to reserves
      */
     uint public constant protocolSeizeShareMantissa = 2.8e16; //2.8%
+
+    /**
+     * @notice Address that is allowed to pull from reserves for staking (rewardRouter)
+     */
+    address payable public reserveGuardian;
 }
 
 abstract contract CTokenInterface is CTokenStorage {

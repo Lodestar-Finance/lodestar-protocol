@@ -5,13 +5,13 @@ import "../../contracts/Comptroller.sol";
 import "../../contracts/PriceOracle.sol";
 
 contract ComptrollerKovan is Comptroller {
-    function getCompAddress() override public view returns (address) {
+    function getCompAddress() public view override returns (address) {
         return 0x61460874a7196d6a22D1eE4922473664b3E95270;
     }
 }
 
 contract ComptrollerRopsten is Comptroller {
-    function getCompAddress() override public view returns (address) {
+    function getCompAddress() public view override returns (address) {
         return 0xf76D4a441E4ba86A923ce32B89AFF89dBccAA075;
     }
 }
@@ -44,7 +44,7 @@ contract ComptrollerHarness is Comptroller {
         compAddress = compAddress_;
     }
 
-    function getCompAddress() override public view returns (address) {
+    function getCompAddress() public view override returns (address) {
         return compAddress;
     }
 
@@ -145,7 +145,7 @@ contract ComptrollerHarness is Comptroller {
         blockNumber = number;
     }
 
-    function getBlockNumber() override public view returns (uint) {
+    function getBlockNumber() public view override returns (uint) {
         return blockNumber;
     }
 
@@ -170,7 +170,13 @@ contract ComptrollerHarness is Comptroller {
 }
 
 contract ComptrollerBorked {
-    function _become(Unitroller unitroller, PriceOracle _oracle, uint _closeFactorMantissa, uint _maxAssets, bool _reinitializing) public {
+    function _become(
+        Unitroller unitroller,
+        PriceOracle _oracle,
+        uint _closeFactorMantissa,
+        uint _maxAssets,
+        bool _reinitializing
+    ) public {
         _oracle;
         _closeFactorMantissa;
         _maxAssets;
@@ -181,7 +187,7 @@ contract ComptrollerBorked {
     }
 }
 
-contract BoolComptroller is ComptrollerInterface {
+abstract contract BoolComptroller is ComptrollerInterface {
     bool allowMint = true;
     bool allowRedeem = true;
     bool allowBorrow = true;
@@ -206,27 +212,27 @@ contract BoolComptroller is ComptrollerInterface {
 
     /*** Assets You Are In ***/
 
-    function enterMarkets(address[] calldata _cTokens) override external returns (uint[] memory) {
+    function enterMarkets(address[] calldata _cTokens) external override returns (uint[] memory) {
         _cTokens;
         uint[] memory ret;
         return ret;
     }
 
-    function exitMarket(address _cToken) override external returns (uint) {
+    function exitMarket(address _cToken) external override returns (uint) {
         _cToken;
         return noError;
     }
 
     /*** Policy Hooks ***/
 
-    function mintAllowed(address _cToken, address _minter, uint _mintAmount) override public returns (uint) {
+    function mintAllowed(address _cToken, address _minter, uint _mintAmount) public override returns (uint) {
         _cToken;
         _minter;
         _mintAmount;
         return allowMint ? noError : opaqueError;
     }
 
-    function mintVerify(address _cToken, address _minter, uint _mintAmount, uint _mintTokens) override external {
+    function mintVerify(address _cToken, address _minter, uint _mintAmount, uint _mintTokens) external override {
         _cToken;
         _minter;
         _mintAmount;
@@ -234,14 +240,19 @@ contract BoolComptroller is ComptrollerInterface {
         require(verifyMint, "mintVerify rejected mint");
     }
 
-    function redeemAllowed(address _cToken, address _redeemer, uint _redeemTokens) override public returns (uint) {
+    function redeemAllowed(address _cToken, address _redeemer, uint _redeemTokens) public override returns (uint) {
         _cToken;
         _redeemer;
         _redeemTokens;
         return allowRedeem ? noError : opaqueError;
     }
 
-    function redeemVerify(address _cToken, address _redeemer, uint _redeemAmount, uint _redeemTokens) override external {
+    function redeemVerify(
+        address _cToken,
+        address _redeemer,
+        uint _redeemAmount,
+        uint _redeemTokens
+    ) external override {
         _cToken;
         _redeemer;
         _redeemAmount;
@@ -249,14 +260,14 @@ contract BoolComptroller is ComptrollerInterface {
         require(verifyRedeem, "redeemVerify rejected redeem");
     }
 
-    function borrowAllowed(address _cToken, address _borrower, uint _borrowAmount) override public returns (uint) {
+    function borrowAllowed(address _cToken, address _borrower, uint _borrowAmount) public override returns (uint) {
         _cToken;
         _borrower;
         _borrowAmount;
         return allowBorrow ? noError : opaqueError;
     }
 
-    function borrowVerify(address _cToken, address _borrower, uint _borrowAmount) override external {
+    function borrowVerify(address _cToken, address _borrower, uint _borrowAmount) external override {
         _cToken;
         _borrower;
         _borrowAmount;
@@ -267,7 +278,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cToken,
         address _payer,
         address _borrower,
-        uint _repayAmount) override public returns (uint) {
+        uint _repayAmount
+    ) public override returns (uint) {
         _cToken;
         _payer;
         _borrower;
@@ -280,7 +292,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _payer,
         address _borrower,
         uint _repayAmount,
-        uint _borrowerIndex) override external {
+        uint _borrowerIndex
+    ) external override {
         _cToken;
         _payer;
         _borrower;
@@ -294,7 +307,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cTokenCollateral,
         address _liquidator,
         address _borrower,
-        uint _repayAmount) override public returns (uint) {
+        uint _repayAmount
+    ) public override returns (uint) {
         _cTokenBorrowed;
         _cTokenCollateral;
         _liquidator;
@@ -309,7 +323,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _liquidator,
         address _borrower,
         uint _repayAmount,
-        uint _seizeTokens) override external {
+        uint _seizeTokens
+    ) external override {
         _cTokenBorrowed;
         _cTokenCollateral;
         _liquidator;
@@ -324,7 +339,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cTokenBorrowed,
         address _borrower,
         address _liquidator,
-        uint _seizeTokens) override public returns (uint) {
+        uint _seizeTokens
+    ) public override returns (uint) {
         _cTokenCollateral;
         _cTokenBorrowed;
         _liquidator;
@@ -338,7 +354,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cTokenBorrowed,
         address _liquidator,
         address _borrower,
-        uint _seizeTokens) override external {
+        uint _seizeTokens
+    ) external override {
         _cTokenCollateral;
         _cTokenBorrowed;
         _liquidator;
@@ -351,7 +368,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cToken,
         address _src,
         address _dst,
-        uint _transferTokens) override public returns (uint) {
+        uint _transferTokens
+    ) public override returns (uint) {
         _cToken;
         _src;
         _dst;
@@ -359,11 +377,7 @@ contract BoolComptroller is ComptrollerInterface {
         return allowTransfer ? noError : opaqueError;
     }
 
-    function transferVerify(
-        address _cToken,
-        address _src,
-        address _dst,
-        uint _transferTokens) override external {
+    function transferVerify(address _cToken, address _src, address _dst, uint _transferTokens) external override {
         _cToken;
         _src;
         _dst;
@@ -376,7 +390,8 @@ contract BoolComptroller is ComptrollerInterface {
     function liquidateCalculateSeizeTokens(
         address _cTokenBorrowed,
         address _cTokenCollateral,
-        uint _repayAmount) override public view returns (uint, uint) {
+        uint _repayAmount
+    ) public view override returns (uint, uint) {
         _cTokenBorrowed;
         _cTokenCollateral;
         _repayAmount;
@@ -455,19 +470,19 @@ contract BoolComptroller is ComptrollerInterface {
 }
 
 contract EchoTypesComptroller is UnitrollerAdminStorage {
-    function stringy(string memory s) public pure returns(string memory) {
+    function stringy(string memory s) public pure returns (string memory) {
         return s;
     }
 
-    function addresses(address a) public pure returns(address) {
+    function addresses(address a) public pure returns (address) {
         return a;
     }
 
-    function booly(bool b) public pure returns(bool) {
+    function booly(bool b) public pure returns (bool) {
         return b;
     }
 
-    function listOInts(uint[] memory u) public pure returns(uint[] memory) {
+    function listOInts(uint[] memory u) public pure returns (uint[] memory) {
         return u;
     }
 

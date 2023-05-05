@@ -1085,7 +1085,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         uint totalReservesNew;
 
         // Check caller is admin
-        if (msg.sender != admin) {
+        if (msg.sender != admin || msg.sender != reserveGuardian) {
             revert ReduceReservesAdminCheck();
         }
 
@@ -1114,7 +1114,11 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         totalReserves = totalReservesNew;
 
         // doTransferOut reverts if anything goes wrong, since we can't be sure if side effects occurred.
-        doTransferOut(admin, reduceAmount);
+        if (msg.sender == admin) {
+            doTransferOut(admin, reduceAmount);
+        } else {
+            doTransferOut(reserveGuardian, reduceAmount);
+        }
 
         emit ReservesReduced(admin, reduceAmount, totalReservesNew);
 
