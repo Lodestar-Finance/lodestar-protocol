@@ -102,7 +102,7 @@ contract CEther is CToken {
      * @dev Reverts upon any failure
      * @param borrowee the account to borrow for
      */
-    function borrowBehalf(address borrowee) external returns (uint) {
+    function borrowBehalf(address borrowee) external payable returns (uint) {
         borrowBehalfInternal(msg.value, borrowee);
         return NO_ERROR;
     }
@@ -113,7 +113,7 @@ contract CEther is CToken {
      * @dev Reverts upon any failure
      * @param redeemee the account to redeem for
      */
-    function redeemBehalf(address redeemee) external returns (uint) {
+    function redeemBehalf(address redeemee) external payable returns (uint) {
         redeemBehalfInternal(msg.value, redeemee);
         return NO_ERROR;
     }
