@@ -31,14 +31,7 @@ contract CEther is CToken {
         // Creator of the contract is admin during initialization
         admin = payable(msg.sender);
 
-        initialize(
-            comptroller_,
-            interestRateModel_,
-            initialExchangeRateMantissa_,
-            name_,
-            symbol_,
-            decimals_
-        );
+        initialize(comptroller_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_);
 
         // Set the proper admin now that initialization is done
         admin = admin_;
@@ -107,11 +100,10 @@ contract CEther is CToken {
      * @notice Sender borrows on behalf of another user. Sender must be approved by Whitelist and user
      * @notice must enable this feature manually.
      * @dev Reverts upon any failure
-     * @param borrowAmount the amount to borrow
      * @param borrowee the account to borrow for
      */
-    function borrowBehalf(uint borrowAmount, address borrowee) external returns (uint) {
-        borrowBehalfInternal(borrowAmount, borrowee);
+    function borrowBehalf(address borrowee) external returns (uint) {
+        borrowBehalfInternal(msg.value, borrowee);
         return NO_ERROR;
     }
 
@@ -119,11 +111,10 @@ contract CEther is CToken {
      * @notice Sender redeems on behalf of another user. Sender must be approved by Whitelist and user
      * @notice must enable this feature manually.
      * @dev Reverts upon any failure
-     * @param redeemTokens the amount to redeem
      * @param redeemee the account to redeem for
      */
-    function redeemBehalf(uint redeemTokens, address redeemee) external returns (uint) {
-        redeemBehalfInternal(redeemTokens, redeemee);
+    function redeemBehalf(address redeemee) external returns (uint) {
+        redeemBehalfInternal(msg.value, redeemee);
         return NO_ERROR;
     }
 
@@ -134,10 +125,7 @@ contract CEther is CToken {
      * @param borrower The borrower of this cToken to be liquidated
      * @param cTokenCollateral The market in which to seize collateral from the borrower
      */
-    function liquidateBorrow(
-        address borrower,
-        CToken cTokenCollateral
-    ) external payable {
+    function liquidateBorrow(address borrower, CToken cTokenCollateral) external payable {
         liquidateBorrowInternal(borrower, msg.value, cTokenCollateral);
     }
 
@@ -173,20 +161,14 @@ contract CEther is CToken {
      * @param amount Amount of Ether being sent
      * @return The actual amount of Ether transferred
      */
-    function doTransferIn(
-        address from,
-        uint amount
-    ) internal override returns (uint) {
+    function doTransferIn(address from, uint amount) internal override returns (uint) {
         // Sanity checks
         require(msg.sender == from, "sender mismatch");
         require(msg.value == amount, "value mismatch");
         return amount;
     }
 
-    function doTransferOut(
-        address payable to,
-        uint amount
-    ) internal virtual override {
+    function doTransferOut(address payable to, uint amount) internal virtual override {
         /* Send the Ether, with minimal gas and revert on failure */
         to.transfer(amount);
     }
