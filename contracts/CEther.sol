@@ -92,18 +92,19 @@ contract CEther is CToken {
      * @dev Reverts upon any failure
      * @param borrower the account with the debt being payed off
      */
-    function repayBorrowBehalf(address borrower) external payable {
-        repayBorrowBehalfInternal(borrower, msg.value);
+    function repayBorrowBehalf(address borrower, uint borrowAmount) external payable {
+        repayBorrowBehalfInternal(borrower, borrowAmount);
     }
 
     /**
      * @notice Sender borrows on behalf of another user. Sender must be approved by Whitelist and user
      * @notice must enable this feature manually.
      * @dev Reverts upon any failure
+     * @param borrowAmount the amount to borrow
      * @param borrowee the account to borrow for
      */
-    function borrowBehalf(address borrowee) external payable returns (uint) {
-        borrowBehalfInternal(msg.value, borrowee);
+    function borrowBehalf(uint borrowAmount, address borrowee) external returns (uint) {
+        borrowBehalfInternal(borrowAmount, borrowee);
         return NO_ERROR;
     }
 
@@ -111,10 +112,11 @@ contract CEther is CToken {
      * @notice Sender redeems on behalf of another user. Sender must be approved by Whitelist and user
      * @notice must enable this feature manually.
      * @dev Reverts upon any failure
+     * @param redeemTokens the amount to redeem
      * @param redeemee the account to redeem for
      */
-    function redeemBehalf(address redeemee) external payable returns (uint) {
-        redeemBehalfInternal(msg.value, redeemee);
+    function redeemBehalf(uint redeemTokens, address redeemee) external returns (uint) {
+        redeemBehalfInternal(redeemTokens, redeemee);
         return NO_ERROR;
     }
 
