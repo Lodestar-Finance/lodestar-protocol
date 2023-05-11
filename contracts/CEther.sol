@@ -92,8 +92,8 @@ contract CEther is CToken {
      * @dev Reverts upon any failure
      * @param borrower the account with the debt being payed off
      */
-    function repayBorrowBehalf(address borrower, uint borrowAmount) external payable {
-        repayBorrowBehalfInternal(borrower, borrowAmount);
+    function repayBorrowBehalf(address borrower) external payable {
+        repayBorrowBehalfInternal(borrower, msg.value);
     }
 
     /**
