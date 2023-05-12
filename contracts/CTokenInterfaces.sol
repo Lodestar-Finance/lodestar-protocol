@@ -190,6 +190,11 @@ abstract contract CTokenInterface is CTokenStorage {
     event NewMarketInterestRateModel(InterestRateModel oldInterestRateModel, InterestRateModel newInterestRateModel);
 
     /**
+     * @notice Event emitted when reserveGuardian is changed
+     */
+    event NewReserveGuardian(address oldReserveGuardian, address newReserveGuardian);
+
+    /**
      * @notice Event emitted when the reserve factor is changed
      */
     event NewReserveFactor(uint oldReserveFactorMantissa, uint newReserveFactorMantissa);
@@ -257,6 +262,8 @@ abstract contract CTokenInterface is CTokenStorage {
     function _acceptAdmin() external virtual returns (uint);
 
     function _setComptroller(ComptrollerInterface newComptroller) external virtual returns (uint);
+
+    function _setReserveGuardian(address payable NewReserveGuardian) external virtual returns (uint);
 
     function _setReserveFactor(uint newReserveFactorMantissa) external virtual returns (uint);
 

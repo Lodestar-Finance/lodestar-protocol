@@ -969,6 +969,28 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
     }
 
     /**
+     * @notice Sets a new reserve guardian for the market
+     * @dev Admin function to set a new reserve guardian
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function _setReserveGuardian(address payable newReserveGuardian) external override returns (uint) {
+        require(msg.sender == admin, "Unauthorized");
+        return _setReserveGuardianFresh(newReserveGuardian);
+    }
+
+    /**
+     * @notice Sets a new reserve guardian for the market
+     * @dev Admin internal function to set a new reserve guardian
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function _setReserveGuardianFresh(address payable newReserveGuardian) internal returns (uint) {
+        address oldReserveGuardian = reserveGuardian;
+        reserveGuardian = newReserveGuardian;
+        emit NewReserveGuardian(oldReserveGuardian, reserveGuardian);
+        return NO_ERROR;
+    }
+
+    /**
      * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
      * @dev Admin function to accrue interest and set a new reserve factor
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
