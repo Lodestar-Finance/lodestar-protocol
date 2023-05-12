@@ -508,23 +508,26 @@ contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerE
         }
     }
 
-    function enableLooping(address looper) external override returns (bool) {
-        require(tx.origin == msg.sender && msg.sender == looper, "!EoA/UNAUTHORIZED");
-        require(looper != address(0), "INVALID ADDRESS");
-        loopEnabled[looper] = true;
-        if (!loopEnabled[looper]) {
+    /**
+     * @notice Toggle for user to allow for looping contract to borrow and redeem on their behalf.
+     * @param state The requested state for the sender to be set to.
+     * @dev Cannot be called by smart contracts.
+     */
+    function enableLooping(bool state) external override returns (bool) {
+        require(tx.origin == msg.sender, "!EoA");
+        loopEnabled[msg.sender] = state;
+        if (!loopEnabled[msg.sender]) {
             revert("FAILED");
         } else {
             return true;
         }
     }
 
-    function isLoopingEnabled(address looper) external view override returns (bool) {
-        if (loopEnabled[looper]) {
-            return true;
-        } else {
-            return false;
-        }
+    /**
+     * @notice Getter function to check if a user has enabled looping.
+     */
+    function isLoopingEnabled(address user) external view override returns (bool) {
+        return loopEnabled[user];
     }
 
     /**
