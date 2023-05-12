@@ -428,6 +428,18 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
      * @dev Admin function to accrue interest and set a new reserve factor
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
+    function _setReserveGuardian(address payable newReserveGuardian) external override returns (uint) {
+        bytes memory data = delegateToImplementation(
+            abi.encodeWithSignature("_setReserveGuardian(address)", newReserveGuardian)
+        );
+        return abi.decode(data, (uint));
+    }
+
+    /**
+     * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
+     * @dev Admin function to accrue interest and set a new reserve factor
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
     function _setReserveFactor(uint newReserveFactorMantissa) external override returns (uint) {
         bytes memory data = delegateToImplementation(
             abi.encodeWithSignature("_setReserveFactor(uint256)", newReserveFactorMantissa)
