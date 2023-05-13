@@ -1106,9 +1106,13 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         // totalReserves - reduceAmount
         uint totalReservesNew;
 
-        // Check caller is admin
-        if (msg.sender != admin || msg.sender != reserveGuardian) {
+        // Check caller is admin or reserve guardian
+        if (msg.sender != admin) {
             revert ReduceReservesAdminCheck();
+        }
+
+        if (msg.sender != reserveGuardian) {
+            revert ReduceReservesGuardianCheck();
         }
 
         // We fail gracefully unless market's block number equals current block number
