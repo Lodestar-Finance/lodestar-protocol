@@ -1107,13 +1107,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         uint totalReservesNew;
 
         // Check caller is admin or reserve guardian
-        if (msg.sender != admin) {
-            revert ReduceReservesAdminCheck();
-        }
-
-        if (msg.sender != reserveGuardian) {
-            revert ReduceReservesGuardianCheck();
-        }
+        require(msg.sender == admin || msg.sender == reserveGuardian, "Unauthorized");
 
         // We fail gracefully unless market's block number equals current block number
         if (accrualBlockNumber != getBlockNumber()) {
