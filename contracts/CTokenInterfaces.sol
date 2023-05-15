@@ -109,6 +109,11 @@ contract CTokenStorage {
      * @notice Share of seized collateral that is added to reserves
      */
     uint public constant protocolSeizeShareMantissa = 2.8e16; //2.8%
+
+    /**
+     * @notice Address that is allowed to pull from reserves for staking (rewardRouter)
+     */
+    address payable public reserveGuardian;
 }
 
 abstract contract CTokenInterface is CTokenStorage {
@@ -185,6 +190,11 @@ abstract contract CTokenInterface is CTokenStorage {
     event NewMarketInterestRateModel(InterestRateModel oldInterestRateModel, InterestRateModel newInterestRateModel);
 
     /**
+     * @notice Event emitted when reserveGuardian is changed
+     */
+    event NewReserveGuardian(address oldReserveGuardian, address newReserveGuardian);
+
+    /**
      * @notice Event emitted when the reserve factor is changed
      */
     event NewReserveFactor(uint oldReserveFactorMantissa, uint newReserveFactorMantissa);
@@ -252,6 +262,8 @@ abstract contract CTokenInterface is CTokenStorage {
     function _acceptAdmin() external virtual returns (uint);
 
     function _setComptroller(ComptrollerInterface newComptroller) external virtual returns (uint);
+
+    function _setReserveGuardian(address payable NewReserveGuardian) external virtual returns (uint);
 
     function _setReserveFactor(uint newReserveFactorMantissa) external virtual returns (uint);
 

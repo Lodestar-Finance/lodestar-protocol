@@ -14,7 +14,7 @@ import "./CTokenInterfaces.sol";
  * @title Compound's Comptroller Contract
  * @author Compound
  */
-contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
+contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
     /// @notice Emitted when an admin supports a market
     event MarketListed(CToken cToken);
 
@@ -38,6 +38,12 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
     /// @notice Emitted when pause guardian is changed
     event NewPauseGuardian(address oldPauseGuardian, address newPauseGuardian);
+
+    /// @notice Emitted when reserve guardian is changed
+    event NewReserveGuardian(address oldReserveGuardian, address newReserveGuardian);
+
+    /// @notice Emitted when LODE speed guardian is changed
+    event NewSpeedGuardian(address oldSpeedGuardian, address newSpeedGuardian);
 
     /// @notice Emitted when an action is paused globally
     event ActionPaused(string action, bool pauseState);
@@ -502,23 +508,26 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
         }
     }
 
-    function enableLooping(address looper) external override returns (bool) {
-        require(tx.origin == msg.sender && msg.sender == looper, "!EoA/UNAUTHORIZED");
-        require(looper != address(0), "INVALID ADDRESS");
-        loopEnabled[looper] = true;
-        if (!loopEnabled[looper]) {
+    /**
+     * @notice Toggle for user to allow for looping contract to borrow and redeem on their behalf.
+     * @param state The requested state for the sender to be set to.
+     * @dev Cannot be called by smart contracts.
+     */
+    function enableLooping(bool state) external override returns (bool) {
+        require(tx.origin == msg.sender, "!EoA");
+        loopEnabled[msg.sender] = state;
+        if (!loopEnabled[msg.sender]) {
             revert("FAILED");
         } else {
             return true;
         }
     }
 
-    function isLoopingEnabled(address looper) external view override returns (bool) {
-        if (loopEnabled[looper]) {
-            return true;
-        } else {
-            return false;
-        }
+    /**
+     * @notice Getter function to check if a user has enabled looping.
+     */
+    function isLoopingEnabled(address user) external view override returns (bool) {
+        return loopEnabled[user];
     }
 
     /**
@@ -1152,7 +1161,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param newSupplyCapGuardian The address of the new Supply Cap Guardian
      */
     function _setSupplyCapGuardian(address newSupplyCapGuardian) external {
-        require(msg.sender == admin, "only admin can set borrow cap guardian");
+        require(msg.sender == admin, "only admin can set supply cap guardian");
 
         // Save current value for inclusion in log
         address oldSupplyCapGuardian = supplyCapGuardian;
@@ -1162,6 +1171,23 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
 
         // Emit NewSupplyCapGuardian(OldSupplyCapGuardian, NewSupplyCapGuardian)
         emit NewSupplyCapGuardian(oldSupplyCapGuardian, newSupplyCapGuardian);
+    }
+
+    /**
+     * @notice Admin function to change the LODE speed Guardian
+     * @param newSpeedGuardian The address of the new Supply Cap Guardian
+     */
+    function _setSpeedGuardian(address newSpeedGuardian) external {
+        require(msg.sender == admin, "only admin can set speed guardian");
+
+        // Save current value for inclusion in log
+        address oldSpeedGuardian = speedGuardian;
+
+        // Store supplyCapGuardian with value newSupplyCapGuardian
+        speedGuardian = newSpeedGuardian;
+
+        // Emit NewSupplyCapGuardian(OldSupplyCapGuardian, NewSupplyCapGuardian)
+        emit NewSpeedGuardian(oldSpeedGuardian, newSpeedGuardian);
     }
 
     /**
@@ -1502,7 +1528,7 @@ contract Comptroller is ComptrollerV8Storage, ComptrollerInterface, ComptrollerE
      * @param borrowSpeeds New borrow-side COMP speed for the corresponding market.
      */
     function _setCompSpeeds(CToken[] memory cTokens, uint[] memory supplySpeeds, uint[] memory borrowSpeeds) public {
-        require(adminOrInitializing(), "only admin can set comp speed");
+        require(adminOrInitializing() || msg.sender == speedGuardian, "only admin or guardian can set comp speed");
 
         uint numTokens = cTokens.length;
         require(

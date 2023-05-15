@@ -115,7 +115,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
      */
     function redeemBehalf(uint redeemTokens, address redeemee) external override returns (uint) {
         bytes memory data = delegateToImplementation(
-            abi.encodeWithSignature("redeemBehalf(uint256, address)", redeemTokens, redeemee)
+            abi.encodeWithSignature("redeemBehalf(uint256,address)", redeemTokens, redeemee)
         );
         return abi.decode(data, (uint));
     }
@@ -151,7 +151,7 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
      */
     function borrowBehalf(uint borrowAmount, address borrowee) external override returns (uint) {
         bytes memory data = delegateToImplementation(
-            abi.encodeWithSignature("borrowBehalf(uint256, address)", borrowAmount, borrowee)
+            abi.encodeWithSignature("borrowBehalf(uint256,address)", borrowAmount, borrowee)
         );
         return abi.decode(data, (uint));
     }
@@ -419,6 +419,18 @@ contract CErc20Delegator is CTokenInterface, CErc20Interface, CDelegatorInterfac
     function _setComptroller(ComptrollerInterface newComptroller) public override returns (uint) {
         bytes memory data = delegateToImplementation(
             abi.encodeWithSignature("_setComptroller(address)", newComptroller)
+        );
+        return abi.decode(data, (uint));
+    }
+
+    /**
+     * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
+     * @dev Admin function to accrue interest and set a new reserve factor
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function _setReserveGuardian(address payable newReserveGuardian) external override returns (uint) {
+        bytes memory data = delegateToImplementation(
+            abi.encodeWithSignature("_setReserveGuardian(address)", newReserveGuardian)
         );
         return abi.decode(data, (uint));
     }

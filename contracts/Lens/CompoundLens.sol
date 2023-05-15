@@ -248,7 +248,7 @@ contract CompoundLens {
         uint underlyingPrice;
     }
 
-    function cTokenUnderlyingPrice(CToken cToken) public returns (CTokenUnderlyingPrice memory) {
+    function cTokenUnderlyingPrice(CToken cToken) public view returns (CTokenUnderlyingPrice memory) {
         ComptrollerLensInterface comptroller = ComptrollerLensInterface(address(cToken.comptroller()));
         PriceOracle priceOracle = comptroller.oracle();
 
@@ -508,13 +508,14 @@ contract CompoundLens {
         uint allocated = sub(total, balance, "sub allocated");
 
         emit lodeMetaData(balance, allocated);
-        
-        return CompBalanceMetadataExt({
-            balance: balance,
-            votes: uint256(comp.getCurrentVotes(account)),
-            delegate: comp.delegates(account),
-            allocated: allocated
-        });
+
+        return
+            CompBalanceMetadataExt({
+                balance: balance,
+                votes: uint256(comp.getCurrentVotes(account)),
+                delegate: comp.delegates(account),
+                allocated: allocated
+            });
     }
 
     struct CompVotes {
