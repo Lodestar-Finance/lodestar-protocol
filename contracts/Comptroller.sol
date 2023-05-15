@@ -1178,7 +1178,7 @@ contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerE
      * @param newSpeedGuardian The address of the new Supply Cap Guardian
      */
     function _setSpeedGuardian(address newSpeedGuardian) external {
-        require(msg.sender == admin, "only admin can set reserve guardian");
+        require(msg.sender == admin, "only admin can set speed guardian");
 
         // Save current value for inclusion in log
         address oldSpeedGuardian = speedGuardian;
