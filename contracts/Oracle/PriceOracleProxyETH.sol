@@ -251,7 +251,7 @@ contract PriceOracleProxyETH is Exponential {
         address[] calldata sources,
         AggregatorBase[] calldata bases
     ) external {
-        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
+        require(msg.sender == admin || msg.sender == guardian, "Only the admin may set the aggregators");
         require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, "mismatched data");
         for (uint256 i = 0; i < cTokenAddresses.length; i++) {
             if (sources[i] != address(0)) {
