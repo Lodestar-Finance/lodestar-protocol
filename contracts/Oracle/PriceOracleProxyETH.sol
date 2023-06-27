@@ -97,15 +97,20 @@ contract PriceOracleProxyETH is Exponential {
     function getUnderlyingPrice(CToken cToken) public view returns (uint256) {
         address cTokenAddress = address(cToken);
         AggregatorInfo memory aggregatorInfo = aggregators[cTokenAddress];
+        bool sequencerStatus ;
         if (cTokenAddress == letherAddress) {
             uint256 price = 1e18;
             return price;
         } else if (cTokenAddress == lplvGLPAddress) {
+            sequencerStatus = getSequencerStatus(sequencerAddress);
+            if (sequencerStatus == false) {
+                revert("Chainlink feeds are not being updated");
+            }
             uint256 price = getPlvGLPPrice();
             price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
             return price;
         } else if (address(aggregatorInfo.source) != address(0)) {
-            bool sequencerStatus = getSequencerStatus(sequencerAddress);
+            sequencerStatus = getSequencerStatus(sequencerAddress);
             uint256 price = getPriceFromChainlink(aggregatorInfo.source);
             if (sequencerStatus == false) {
                 // If flag is raised we shouldn't perform any critical operations
@@ -246,7 +251,7 @@ contract PriceOracleProxyETH is Exponential {
         address[] calldata sources,
         AggregatorBase[] calldata bases
     ) external {
-        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
+        require(msg.sender == admin || msg.sender == guardian, "Only the admin may set the aggregators");
         require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, "mismatched data");
         for (uint256 i = 0; i < cTokenAddresses.length; i++) {
             if (sources[i] != address(0)) {
