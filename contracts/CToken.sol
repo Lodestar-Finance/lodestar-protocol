@@ -55,6 +55,8 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         symbol = symbol_;
         decimals = decimals_;
 
+        mintInitial();
+
         // The counter starts true to prevent changing it from zero to non-zero (i.e. smaller cost/refund)
         _notEntered = true;
     }
@@ -448,6 +450,53 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         /* We call the defense hook */
         // unused function
         // comptroller.mintVerify(address(this), minter, actualMintAmount, mintTokens);
+    }
+
+    /**
+     * @notice Function to create and burn initial liquidity so that the market can never be empty
+     * Can only be called once during initialization. Target initial liquidity is .01 lTokens.
+     * Total supply is increased and cTokens are effectively burned on success.
+     */
+    function mintInitial() internal {
+        bool isDone;
+        require(!isDone, "mintInitial already called");
+
+        uint256 minLiquidity = 1e6;
+
+        Exp memory exchangeRate = Exp({mantissa: exchangeRateStoredInternal()});
+
+        uint256 mintAmount = mul_(minLiquidity, exchangeRate);
+
+        /////////////////////////
+        // EFFECTS & INTERACTIONS
+        // (No safe failures beyond this point)
+
+        /*
+         *  We call `doTransferIn` for the minter and the mintAmount.
+         *  Note: The cToken must handle variations between ERC-20 and ETH underlying.
+         *  `doTransferIn` reverts if anything goes wrong, since we can't be sure if
+         *  side-effects occurred. The function returns the amount actually transferred,
+         *  in case of a fee. On success, the cToken holds an additional `actualMintAmount`
+         *  of cash.
+         */
+        uint actualMintAmount = doTransferIn(admin, mintAmount);
+
+        /*
+         * We get the current exchange rate and calculate the number of cTokens to be minted:
+         *  mintTokens = actualMintAmount / exchangeRate
+         */
+
+        uint mintTokens = div_(actualMintAmount, exchangeRate);
+
+        /*
+         * We calculate the new total supply of cTokens and minter token balance, checking for overflow:
+         *  totalSupplyNew = totalSupply + mintTokens
+         *  accountTokensNew = accountTokens[minter] + mintTokens
+         * And write them into storage
+         */
+        totalSupply += mintTokens;
+        accountTokens[address(0)] += mintTokens;
+        isDone = true;
     }
 
     /**
