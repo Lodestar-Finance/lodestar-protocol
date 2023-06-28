@@ -311,6 +311,34 @@ abstract contract CErc20Interface is CErc20Storage {
     function _addReserves(uint addAmount) external virtual returns (uint);
 }
 
+abstract contract CEtherInterface {
+    /*** User Interface ***/
+
+    function mint() external payable virtual;
+
+    function redeem(uint redeemTokens) external virtual returns (uint);
+
+    function redeemBehalf(uint redeemTokens, address redeemee) external virtual returns (uint);
+
+    function redeemUnderlying(uint redeemAmount) external virtual returns (uint);
+
+    function borrow(uint borrowAmount) external virtual returns (uint);
+
+    function borrowBehalf(uint borrowAmount, address borrowee) external virtual returns (uint);
+
+    function repayBorrow() external payable virtual;
+
+    function repayBorrowBehalf(address borrower) external payable virtual;
+
+    function liquidateBorrow(address borrower, CTokenInterface cTokenCollateral) external payable virtual;
+
+    function sweepToken(EIP20NonStandardInterface token) external virtual;
+
+    /*** Admin Functions ***/
+
+    function _addReserves() external payable virtual returns (uint);
+}
+
 contract CDelegationStorage {
     /**
      * @notice Implementation address for this contract
