@@ -55,8 +55,6 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         symbol = symbol_;
         decimals = decimals_;
 
-        mintInitial();
-
         // The counter starts true to prevent changing it from zero to non-zero (i.e. smaller cost/refund)
         _notEntered = true;
     }
@@ -440,7 +438,14 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
          *  accountTokensNew = accountTokens[minter] + mintTokens
          * And write them into storage
          */
-        totalSupply = totalSupply + mintTokens;
+        uint totalSupplyNew = totalSupply + mintTokens;
+
+        if (totalSupply == 0) {
+            (mintTokens, actualMintAmount) = ensureMinimalLiquidity(mintTokens, actualMintAmount, exchangeRate);
+        }
+
+        totalSupply = totalSupplyNew;
+
         accountTokens[minter] = accountTokens[minter] + mintTokens;
 
         /* We emit a Mint event, and a Transfer event */
@@ -452,51 +457,32 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         // comptroller.mintVerify(address(this), minter, actualMintAmount, mintTokens);
     }
 
-    /**
-     * @notice Function to create and burn initial liquidity so that the market can never be empty
-     * Can only be called once during initialization. Target initial liquidity is .01 lTokens.
-     * Total supply is increased and cTokens are effectively burned on success.
-     */
-    function mintInitial() internal {
-        bool isDone;
-        require(!isDone, "mintInitial already called");
+    function ensureMinimalLiquidity(
+        uint mintTokens,
+        uint actualMintAmount,
+        Exp memory exchangeRateMantissa
+    ) internal returns (uint, uint) {
+        uint MINIMAL_LIQUIDITY = 1e6;
+        require(
+            mintTokens > MINIMAL_LIQUIDITY,
+            "The first supply to a market must meet a minimum liquidity (1/5000th of 1 underlying)"
+        );
 
-        uint256 minLiquidity = 1e6;
+        uint minLiquidityUnderlying;
+        minLiquidityUnderlying = mul_ScalarTruncate(exchangeRateMantissa, MINIMAL_LIQUIDITY);
 
-        Exp memory exchangeRate = Exp({mantissa: exchangeRateStoredInternal()});
+        uint accountTokensNew;
+        accountTokensNew = mintTokens - MINIMAL_LIQUIDITY;
 
-        uint256 mintAmount = mul_(minLiquidity, exchangeRate);
+        uint actualMintAmountNew;
+        actualMintAmountNew = actualMintAmount - minLiquidityUnderlying;
 
-        /////////////////////////
-        // EFFECTS & INTERACTIONS
-        // (No safe failures beyond this point)
+        emit Mint(address(0), minLiquidityUnderlying, MINIMAL_LIQUIDITY);
+        emit Transfer(address(this), address(0), MINIMAL_LIQUIDITY);
 
-        /*
-         *  We call `doTransferIn` for the minter and the mintAmount.
-         *  Note: The cToken must handle variations between ERC-20 and ETH underlying.
-         *  `doTransferIn` reverts if anything goes wrong, since we can't be sure if
-         *  side-effects occurred. The function returns the amount actually transferred,
-         *  in case of a fee. On success, the cToken holds an additional `actualMintAmount`
-         *  of cash.
-         */
-        uint actualMintAmount = doTransferIn(admin, mintAmount);
+        accountTokens[address(0)] = MINIMAL_LIQUIDITY;
 
-        /*
-         * We get the current exchange rate and calculate the number of cTokens to be minted:
-         *  mintTokens = actualMintAmount / exchangeRate
-         */
-
-        uint mintTokens = div_(actualMintAmount, exchangeRate);
-
-        /*
-         * We calculate the new total supply of cTokens and minter token balance, checking for overflow:
-         *  totalSupplyNew = totalSupply + mintTokens
-         *  accountTokensNew = accountTokens[minter] + mintTokens
-         * And write them into storage
-         */
-        totalSupply += mintTokens;
-        accountTokens[address(0)] += mintTokens;
-        isDone = true;
+        return (accountTokensNew, actualMintAmountNew);
     }
 
     /**
