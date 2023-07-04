@@ -470,7 +470,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      */
     function redeemBehalfInternal(uint redeemTokens, address redeemee) internal nonReentrant {
         require(comptroller.isLoopingEnabled(redeemee), "NOT ENABLED");
-        require(Whitelist(0xB8C9D74A09dbb2f61Ac748636657Cc9857e9a446).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
+        require(Whitelist(0x80288A4531a2B6671E69eCEd5AE121C9eA0B0204).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
         accrueInterest();
         //borrowFresh emits borrow-specific logs on errors, so we don't need to
         redeemFresh(payable(redeemee), redeemTokens, 0);
@@ -582,7 +582,7 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
      */
     function borrowBehalfInternal(uint borrowAmount, address borrowee) internal nonReentrant {
         require(comptroller.isLoopingEnabled(borrowee), "NOT ENABLED");
-        require(Whitelist(0xB8C9D74A09dbb2f61Ac748636657Cc9857e9a446).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
+        require(Whitelist(0x80288A4531a2B6671E69eCEd5AE121C9eA0B0204).isWhitelisted(msg.sender), "NOT_AUTHORIZED");
         accrueInterest();
         //borrowFresh emits borrow-specific logs on errors, so we don't need to
         borrowFresh(payable(borrowee), borrowAmount);
