@@ -4,9 +4,9 @@ pragma solidity ^0.8.10;
 import "./CTokenInterfaces.sol";
 
 /**
- * @title Compound's CErc20Delegator Contract
- * @notice CTokens which wrap an EIP-20 underlying and delegate to an implementation
- * @author Compound
+ * @title Lodestar's CEtherDelegator Contract
+ * @notice CTokens which wrap native ETH and delegate to an implementation
+ * @author Lodestar Finance
  */
 contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterface {
     /**
