@@ -516,11 +516,7 @@ contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerE
     function enableLooping(bool state) external override returns (bool) {
         require(tx.origin == msg.sender, "!EoA");
         loopEnabled[msg.sender] = state;
-        if (!loopEnabled[msg.sender]) {
-            revert("FAILED");
-        } else {
-            return true;
-        }
+        return true;
     }
 
     /**
