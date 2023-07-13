@@ -438,7 +438,14 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
          *  accountTokensNew = accountTokens[minter] + mintTokens
          * And write them into storage
          */
-        totalSupply = totalSupply + mintTokens;
+        uint totalSupplyNew = totalSupply + mintTokens;
+
+        if (totalSupply == 0) {
+            (mintTokens, actualMintAmount) = ensureMinimalLiquidity(mintTokens, actualMintAmount, exchangeRate);
+        }
+
+        totalSupply = totalSupplyNew;
+
         accountTokens[minter] = accountTokens[minter] + mintTokens;
 
         /* We emit a Mint event, and a Transfer event */
@@ -448,6 +455,34 @@ abstract contract CToken is CTokenInterface, ExponentialNoError, TokenErrorRepor
         /* We call the defense hook */
         // unused function
         // comptroller.mintVerify(address(this), minter, actualMintAmount, mintTokens);
+    }
+
+    function ensureMinimalLiquidity(
+        uint mintTokens,
+        uint actualMintAmount,
+        Exp memory exchangeRateMantissa
+    ) internal returns (uint, uint) {
+        uint MINIMAL_LIQUIDITY = 1e6;
+        require(
+            mintTokens > MINIMAL_LIQUIDITY,
+            "The first supply to a market must meet a minimum liquidity (1/5000th of 1 underlying)"
+        );
+
+        uint minLiquidityUnderlying;
+        minLiquidityUnderlying = mul_ScalarTruncate(exchangeRateMantissa, MINIMAL_LIQUIDITY);
+
+        uint accountTokensNew;
+        accountTokensNew = mintTokens - MINIMAL_LIQUIDITY;
+
+        uint actualMintAmountNew;
+        actualMintAmountNew = actualMintAmount - minLiquidityUnderlying;
+
+        emit Mint(address(0), minLiquidityUnderlying, MINIMAL_LIQUIDITY);
+        emit Transfer(address(this), address(0), MINIMAL_LIQUIDITY);
+
+        accountTokens[address(0)] = MINIMAL_LIQUIDITY;
+
+        return (accountTokensNew, actualMintAmountNew);
     }
 
     /**
