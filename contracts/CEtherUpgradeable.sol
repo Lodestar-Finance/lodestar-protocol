@@ -119,8 +119,9 @@ contract CEtherUpgradeable is CToken {
      * @param borrower The borrower of this cToken to be liquidated
      * @param cTokenCollateral The market in which to seize collateral from the borrower
      */
-    function liquidateBorrow(address borrower, CToken cTokenCollateral) external payable {
+    function liquidateBorrow(address borrower, CToken cTokenCollateral) external payable returns (uint) {
         liquidateBorrowInternal(borrower, msg.value, cTokenCollateral);
+        return NO_ERROR;
     }
 
     /**
