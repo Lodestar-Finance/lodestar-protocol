@@ -39,7 +39,7 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
         delegateTo(
             implementation_,
             abi.encodeWithSignature(
-                "initialize(address,address,address,uint256,string,string,uint8)",
+                "initialize(address,address,uint256,string,string,uint8)",
                 comptroller_,
                 interestRateModel_,
                 initialExchangeRateMantissa_,
