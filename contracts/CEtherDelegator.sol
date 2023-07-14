@@ -96,7 +96,7 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint redeemTokens) external override returns (uint) {
-        bytes memory data = delegateToImplementation(abi.encodeWithSignature("redeem(uint)", redeemTokens));
+        bytes memory data = delegateToImplementation(abi.encodeWithSignature("redeem(uint256)", redeemTokens));
         return abi.decode(data, (uint));
     }
 
@@ -121,7 +121,9 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint redeemAmount) external override returns (uint) {
-        bytes memory data = delegateToImplementation(abi.encodeWithSignature("redeemUnderlying(uint)", redeemAmount));
+        bytes memory data = delegateToImplementation(
+            abi.encodeWithSignature("redeemUnderlying(uint256)", redeemAmount)
+        );
         return abi.decode(data, (uint));
     }
 
@@ -143,7 +145,7 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
      */
     function borrowBehalf(uint borrowAmount, address borrowee) external override returns (uint) {
         bytes memory data = delegateToImplementation(
-            abi.encodeWithSignature("borrowBehalf(uint,address)", borrowAmount, borrowee)
+            abi.encodeWithSignature("borrowBehalf(uint256,address)", borrowAmount, borrowee)
         );
         return abi.decode(data, (uint));
     }
