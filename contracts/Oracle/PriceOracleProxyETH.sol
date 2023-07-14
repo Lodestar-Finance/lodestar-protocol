@@ -61,22 +61,19 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
      * @param letherAddress_ the address of the Ether cToken
      * @param lplvGLPAddress_ the address of the plvGLP cToken
      * @param glpOracleAddress_ the address of the GLP Oracle contract
-     * @param lodeOracle_ the address of the LODE oracle contract
      */
     constructor(
         address ethUsdAggregator_,
         address sequencerAddress_,
         address letherAddress_,
         address lplvGLPAddress_,
-        address glpOracleAddress_,
-        address lodeOracle_
+        address glpOracleAddress_
     ) {
         ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
         sequencerAddress = sequencerAddress_;
         letherAddress = letherAddress_;
         lplvGLPAddress = lplvGLPAddress_;
         glpOracleAddress = glpOracleAddress_;
-        lodeOracle = lodeOracle_;
     }
 
     /**
