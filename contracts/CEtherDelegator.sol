@@ -86,7 +86,7 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      */
     function mint() external payable override {
-        delegateToImplementation(abi.encodeWithSignature("mint(uint256)", msg.value));
+        delegateToImplementation(abi.encodeWithSignature("mint()"));
     }
 
     /**
@@ -154,7 +154,7 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
      * @notice Sender repays their own borrow
      */
     function repayBorrow() external payable override {
-        delegateToImplementation(abi.encodeWithSignature("repayBorrow(uint256)", msg.value));
+        delegateToImplementation(abi.encodeWithSignature("repayBorrow()"));
     }
 
     /**
@@ -162,7 +162,7 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
      * @param borrower the account with the debt being payed off
      */
     function repayBorrowBehalf(address borrower) external payable override {
-        delegateToImplementation(abi.encodeWithSignature("repayBorrowBehalf(address,uint256)", borrower, msg.value));
+        delegateToImplementation(abi.encodeWithSignature("repayBorrowBehalf(address)", borrower));
     }
 
     /**
@@ -173,7 +173,7 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
      */
     function liquidateBorrow(address borrower, CTokenInterface cTokenCollateral) external payable override {
         delegateToImplementation(
-            abi.encodeWithSignature("liquidateBorrow(address,uint256,address)", borrower, msg.value, cTokenCollateral)
+            abi.encodeWithSignature("liquidateBorrow(address,address)", borrower, cTokenCollateral)
         );
     }
 
@@ -441,7 +441,7 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function _addReserves() external payable override returns (uint) {
-        bytes memory data = delegateToImplementation(abi.encodeWithSignature("_addReserves(uint256)", msg.value));
+        bytes memory data = delegateToImplementation(abi.encodeWithSignature("_addReserves()"));
         return abi.decode(data, (uint));
     }
 
@@ -542,6 +542,6 @@ contract CEtherDelegator is CTokenInterface, CEtherInterface, CDelegatorInterfac
      * @notice Send Ether to CEther to mint
      */
     receive() external payable {
-        delegateToImplementation(abi.encodeWithSignature("mint(uint256)", msg.value));
+        delegateToImplementation(abi.encodeWithSignature("mint()"));
     }
 }
