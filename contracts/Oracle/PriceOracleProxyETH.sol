@@ -37,10 +37,14 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     /// @notice Chainlink L2 sequencer aggregator address
     address public sequencerAddress;
 
-    /// @notice LODE oracle address (SushiOracle)
-    address public lodeOracle;
+    /// @notice frxETH-ETH exchange rate oracle address
+    AggregatorV3Interface public frxETHOracle;
 
-    uint256 lodePrice;
+    /// @notice sfrxETH-frxETH exchange rate oracle address
+    AggregatorV3Interface public sfrxETHOracle;
+
+    /// @notice the sfrxETH market address
+    address public lsfrxETH;
 
     struct AggregatorInfo {
         /// @notice The source address of the aggregator
@@ -61,7 +65,9 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
      * @param letherAddress_ the address of the Ether cToken
      * @param lplvGLPAddress_ the address of the plvGLP cToken
      * @param glpOracleAddress_ the address of the GLP Oracle contract
-     * @param lodeOracle_ the address of the LODE oracle contract
+     * @param frxETHOracle_ the address of the frxETH-ETH Oracle contract
+     * @param sfrxETHOracle_ the address of the sfrxETH-frxETH Oracle contract
+     * @param lsfrxETH_ the address of the sfrxETH market
      */
     constructor(
         address ethUsdAggregator_,
@@ -69,14 +75,18 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         address letherAddress_,
         address lplvGLPAddress_,
         address glpOracleAddress_,
-        address lodeOracle_
+        AggregatorV3Interface frxETHOracle_,
+        AggregatorV3Interface sfrxETHOracle_,
+        address lsfrxETH_
     ) {
         ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
         sequencerAddress = sequencerAddress_;
         letherAddress = letherAddress_;
         lplvGLPAddress = lplvGLPAddress_;
         glpOracleAddress = glpOracleAddress_;
-        lodeOracle = lodeOracle_;
+        frxETHOracle = frxETHOracle_;
+        sfrxETHOracle = sfrxETHOracle_;
+        lsfrxETH = lsfrxETH_;
     }
 
     /**
@@ -99,6 +109,14 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
             }
             uint256 price = getPlvGLPPrice();
             price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
+            return price;
+        } else if (cTokenAddress == lsfrxETH) {
+            sequencerStatus = getSequencerStatus(sequencerAddress);
+            if (sequencerStatus == false) {
+                // If flag is raised we shouldn't perform any critical operations
+                revert("Chainlink feeds are not being updated");
+            }
+            uint256 price = getSfrxETHPrice();
             return price;
         } else if (address(aggregatorInfo.source) != address(0)) {
             sequencerStatus = getSequencerStatus(sequencerAddress);
@@ -134,6 +152,22 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
 
         // Extend the decimals to 1e18.
         return uint256(price) * 10 ** (18 - uint256(aggregator.decimals()));
+    }
+
+    /**
+     * @notice Function to price sfrxETH
+     */
+    function getSfrxETHPrice() internal view returns (uint256) {
+        //get frxETH-ETH exchange rate, should return exchange rate scaled to 18 decimals
+        uint256 frxETHExchangeRate = getPriceFromChainlink(frxETHOracle);
+
+        //get sfrxETH-frxETH exchange rate, should return exchange rate scaled to 18 decimals
+        uint256 sfrxETHExchangeRate = getPriceFromChainlink(sfrxETHOracle);
+
+        //if price of ether is always 1e18 then price of sfrxETH = (1e18 * sfrxETH ExR * frxETH ExR) / 1e36
+        uint256 price = (1e18 * frxETHExchangeRate * sfrxETHExchangeRate) / 1e36;
+
+        return price;
     }
 
     /**
