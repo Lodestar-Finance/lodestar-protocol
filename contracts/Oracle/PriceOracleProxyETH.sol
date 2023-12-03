@@ -20,15 +20,11 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     bool public anchorsEnabled;
 
     uint256 private constant GRACE_PERIOD_TIME = 3600;
-    uint256 public constant PRECISION = 1e36;
     uint256 public constant BASE = 1e18;
 
     uint256 public MAX_DEVIATION;
     uint8 public twapPeriod;
     uint8 public currentIndex;
-
-    //max amount of time we will keep observations for (to be able to change the twapPeriod without downtime if possible)
-    uint8 public constant maxLookback = 48;
 
     address public constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
@@ -60,6 +56,7 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         uint256 cumulativeSum;
         uint256 anchorPrice;
         uint256 lastUpdateTimestamp;
+        bool isInitialized;
     }
 
     mapping(address => Anchor) public anchors;
@@ -70,7 +67,6 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     }
 
     mapping(address => Observation[]) public observations;
-    mapping(address => Observation[]) public maxObservations;
 
     /// @notice Ether cToken address
     address public letherAddress;
@@ -183,20 +179,36 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         // Extend the decimals to 1e18.
         uint256 priceScaled = uint256(price) * 10 ** (18 - uint256(aggregator.decimals()));
 
-        uint256 twapPrice;
+        uint256 anchorPrice;
         uint256 deviation;
         uint256 maxDeviation;
 
         if (anchorsEnabled) {
-            twapPrice = getTWAPPrice(cToken);
-            maxDeviation = (twapPrice * MAX_DEVIATION) / BASE;
+            anchorPrice = anchors[address(cToken)].anchorPrice;
+            maxDeviation = (anchorPrice * MAX_DEVIATION) / BASE;
 
-            if (twapPrice > priceScaled) {
-                deviation = twapPrice - priceScaled;
+            if (anchorPrice > priceScaled) {
+                deviation = anchorPrice - priceScaled;
             } else {
-                deviation = priceScaled - twapPrice;
+                deviation = priceScaled - anchorPrice;
             }
         }
+
+        //this logic needs to be deeply examined
+        //we expect that in the vast majority of circumstances, we will rely on the Chainlink oracles
+        //however, should there be a significant deviation in the chainlink feed from the TWAP of the anchor pool
+        //then the chainlink oracle has either rightfully or wrongfully deviated.
+        //if the chainlink oracle has rightfully deviated, we need for our TWAP price to quickly fall back within the deviation threshold
+        //if the chainlink oracle has wrongfully deviated, we want to return the TWAP price (provided it is good)
+        //until the chainlink oracle has situated itself again.
+        //How does one determine which is the case?
+        //I think the only thing we can do is assume the chainlink oracle is wrong, but make the TWAP range tight enough
+        //such that if correct, the TWAP will converge with the real price and go back to reporting the chainlink price quickly without
+        //undesirable amounts of price lag
+        //this however puts quite a bit of faith into the calculated TWAP price in these rare circumstances, and needs to be carefully executed
+        //in practice to avoid potential manipulation.
+        //the relationship between lag/accuracy given twap period should be examined for various assets. maybe do something like the IRM's where
+        //different asset classes have different twap periods depending on intended behavior? worth discussing.
 
         if (deviation < maxDeviation) {
             return priceScaled;
@@ -245,26 +257,23 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
 
         //calculate token price, to be fleshed out
         if (token0 != WETH) {
-            price = (reserve0 * PRECISION) / reserve1;
+            price = (reserve0 * BASE) / reserve1;
         } else {
-            price = (reserve1 * PRECISION) / reserve0;
+            price = (reserve1 * BASE) / reserve0;
+        }
+
+        if (currentIndex == 0) {
+            observations[address(cToken)] = new Observation[](twapPeriod);
         }
 
         uint8 indexMod = currentIndex % twapPeriod;
-        uint8 maxMod = currentIndex % maxLookback;
-
         Observation[] memory marketObservations = observations[address(cToken)];
-
         Observation memory marketObservationCurrentIndex = marketObservations[indexMod];
-
         uint256 priceChop = marketObservationCurrentIndex.price;
 
         observations[address(cToken)][indexMod].price = price;
         observations[address(cToken)][indexMod].timestamp = block.timestamp;
         anchors[address(cToken)].cumulativeSum = marketAnchor.cumulativeSum + price - priceChop;
-        maxObservations[address(cToken)][maxMod].price = price;
-        maxObservations[address(cToken)][maxMod].timestamp = block.timestamp;
-
         return true;
     }
 
@@ -274,11 +283,20 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     }
 
     //function to update TWAP, to be permissioned
-    function updateTWAPPrice(CToken cToken) external returns (bool) {
+    function updateTWAPPrice(CToken cToken) public returns (bool) {
         Anchor memory marketAnchor = anchors[address(cToken)];
         uint256 cumulativeSum = marketAnchor.cumulativeSum;
         uint256 price = cumulativeSum / twapPeriod;
         anchors[address(cToken)].anchorPrice = price;
+        return true;
+    }
+
+    function updateAnchors(CToken[] memory cTokens) external returns (bool) {
+        for (uint i = 0; i < cTokens.length; i++) {
+            require(getObservation(cTokens[i]), "Observation update failed");
+            require(updateTWAPPrice(cTokens[i]), "TWAP Update failed");
+        }
+        currentIndex += 1;
         return true;
     }
 
@@ -297,6 +315,7 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     event SetAdmin(address admin);
     event newLodeOracle(address newLodeOracle);
     event newGlpOracle(address newGlpOracle);
+    event AnchorUpdated(string name, IUniswapV2Pair source);
 
     /**
      * @notice Set guardian for price oracle proxy
@@ -327,5 +346,12 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
             });
             emit AggregatorUpdated(cTokenAddresses[i], sources[i], bases[i]);
         }
+    }
+
+    function _updateAnchor(CToken cToken, IUniswapV2Pair source, string memory name) external onlyOwner {
+        require(address(source) != address(0) && address(cToken) != address(0), "Invalid input(s)");
+        anchors[address(cToken)].name = name;
+        anchors[address(cToken)].source = source;
+        emit AnchorUpdated(name, source);
     }
 }
