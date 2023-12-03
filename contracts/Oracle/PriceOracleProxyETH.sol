@@ -11,19 +11,66 @@ import "../EIP20Interface.sol";
 import "./Interfaces/PlvGLPOracleInterface.sol";
 import "../Exponential.sol";
 import "../SafeMath.sol";
+import "./Interfaces/UniswapV2Interface.sol";
 
 contract PriceOracleProxyETH is Ownable2Step, Exponential {
-    using SafeMath for uint256;
+    using SafeMath for uint8;
 
     bool public constant isPriceOracle = true;
+    bool public anchorsEnabled;
 
     uint256 private constant GRACE_PERIOD_TIME = 3600;
+    uint256 public constant PRECISION = 1e36;
+    uint256 public constant BASE = 1e18;
+
+    uint256 public MAX_DEVIATION;
+    uint8 public twapPeriod;
+    uint8 public currentIndex;
+
+    //max amount of time we will keep observations for (to be able to change the twapPeriod without downtime if possible)
+    uint8 public constant maxLookback = 48;
+
+    address public constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
     /// @notice ChainLink aggregator base, currently support USD and ETH
-    enum AggregatorBase {
+    enum ChainlinkAggregatorBase {
         USD,
         ETH
     }
+
+    //we want to be able to make an observation on some source address (LP) and record the TWAP at that time
+    //for our TWAP we will have a N hour moving average so we will take an observation once per hour and
+    //continuously report a N point moving average (the average price of the asset over the last N hours).
+
+    //at any time, we have a cumulative sum stored for a particular market which is the sum of N values in the
+    //market's observation array. Starting at index 0 for N = 6:
+    //0: first observation and store at index 0
+    //1: second observation and store at index 1
+    //..
+    //5: sixth observation and store at index 5
+    //6: seventh observation and store at index 0
+
+    //this maintains a constant length array for the asset of length N and observation indices range from
+    //0 to N-1. This is accomplished by continuously counting the parameter currentIndex and calculating the
+    //modulo between the current index and N (i.e. mod currentIndex % N)
+
+    struct Anchor {
+        string name;
+        IUniswapV2Pair source;
+        uint256 cumulativeSum;
+        uint256 anchorPrice;
+        uint256 lastUpdateTimestamp;
+    }
+
+    mapping(address => Anchor) public anchors;
+
+    struct Observation {
+        uint256 price;
+        uint256 timestamp;
+    }
+
+    mapping(address => Observation[]) public observations;
+    mapping(address => Observation[]) public maxObservations;
 
     /// @notice Ether cToken address
     address public letherAddress;
@@ -46,7 +93,7 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         /// @notice The source address of the aggregator
         AggregatorV3Interface source;
         /// @notice The aggregator base
-        AggregatorBase base;
+        ChainlinkAggregatorBase base;
     }
 
     /// @notice Chainlink Aggregators
@@ -67,13 +114,16 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         address sequencerAddress_,
         address letherAddress_,
         address lplvGLPAddress_,
-        address glpOracleAddress_
+        address glpOracleAddress_,
+        uint8 twapPeriod_
     ) {
         ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
         sequencerAddress = sequencerAddress_;
         letherAddress = letherAddress_;
         lplvGLPAddress = lplvGLPAddress_;
         glpOracleAddress = glpOracleAddress_;
+        twapPeriod = twapPeriod_;
+        currentIndex = 0;
     }
 
     /**
@@ -95,20 +145,20 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
                 revert("Chainlink feeds are not being updated");
             }
             uint256 price = getPlvGLPPrice();
-            price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
+            price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator, cToken)}));
             return price;
         } else if (address(aggregatorInfo.source) != address(0)) {
             sequencerStatus = getSequencerStatus(sequencerAddress);
-            uint256 price = getPriceFromChainlink(aggregatorInfo.source);
+            uint256 price = getPriceFromChainlink(aggregatorInfo.source, cToken);
             if (sequencerStatus == false) {
                 // If flag is raised we shouldn't perform any critical operations
                 revert("Chainlink feeds are not being updated");
-            } else if (aggregatorInfo.base == AggregatorBase.USD) {
+            } else if (aggregatorInfo.base == ChainlinkAggregatorBase.USD) {
                 // Convert the price to ETH based if it's USD based.
-                price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
+                price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator, cToken)}));
                 uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
                 return price * 10 ** (18 - underlyingDecimals);
-            } else if (aggregatorInfo.base == AggregatorBase.ETH) {
+            } else if (aggregatorInfo.base == ChainlinkAggregatorBase.ETH) {
                 uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
                 return price * 10 ** (18 - underlyingDecimals);
             }
@@ -123,14 +173,34 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
      * @param aggregator The ChainLink aggregator to get the price of
      * @return The price
      */
-    function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint256) {
+    function getPriceFromChainlink(AggregatorV3Interface aggregator, CToken cToken) internal view returns (uint256) {
         (uint80 roundId, int256 price, uint startedAt, uint updatedAt, uint80 answeredInRound) = aggregator
             .latestRoundData();
+        uint256 twapPrice;
+        if (anchorsEnabled) {
+            twapPrice = getTWAPPrice(cToken);
+        }
         require(roundId == answeredInRound && startedAt == updatedAt, "Price not fresh");
         require(price > 0, "invalid price");
 
         // Extend the decimals to 1e18.
-        return uint256(price) * 10 ** (18 - uint256(aggregator.decimals()));
+        uint256 priceScaled = uint256(price) * 10 ** (18 - uint256(aggregator.decimals()));
+
+        uint256 maxDeviation = (twapPrice * MAX_DEVIATION) / BASE;
+
+        uint256 deviation;
+
+        if (twapPrice > priceScaled) {
+            deviation = twapPrice - priceScaled;
+        } else {
+            deviation = priceScaled - twapPrice;
+        }
+
+        if (deviation < maxDeviation) {
+            return priceScaled;
+        } else {
+            return anchors[address(cToken)].anchorPrice;
+        }
     }
 
     /**
@@ -159,9 +229,68 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         return status;
     }
 
+    //Simple function to get price from an LP and store it as an observation in the array given the current index
+    //to be fleshed out, currently a proof of concept
+    //is it better to have the input be the source (ie the anchor is accessed outside of this function)
+    //or is it better to take the ctoken address here, retrieve the anchor struct for the market and act accordingly?
+    //i think the latter.
+    function getObservation(CToken cToken) public returns (bool) {
+        Anchor memory marketAnchor = anchors[address(cToken)];
+        IUniswapV2Pair source = marketAnchor.source;
+        uint256 price;
+        address token0 = source.token0();
+        (uint112 reserve0, uint112 reserve1, ) = source.getReserves();
+
+        //calculate token price, to be fleshed out
+        if (token0 != WETH) {
+            price = (reserve0 * PRECISION) / reserve1;
+        } else {
+            price = (reserve1 * PRECISION) / reserve0;
+        }
+
+        uint8 indexMod = currentIndex % twapPeriod;
+        uint8 maxMod = currentIndex % maxLookback;
+
+        Observation[] memory marketObservations = observations[address(cToken)];
+
+        Observation memory marketObservationCurrentIndex = marketObservations[indexMod];
+
+        uint256 priceChop = marketObservationCurrentIndex.price;
+
+        observations[address(cToken)][indexMod].price = price;
+        observations[address(cToken)][indexMod].timestamp = block.timestamp;
+        anchors[address(cToken)].cumulativeSum = marketAnchor.cumulativeSum + price - priceChop;
+        maxObservations[address(cToken)][maxMod].price = price;
+        maxObservations[address(cToken)][maxMod].timestamp = block.timestamp;
+
+        return true;
+    }
+
+    //view function to see current twap price
+    function getTWAPPrice(CToken cToken) public view returns (uint256) {
+        return anchors[address(cToken)].anchorPrice;
+    }
+
+    //function to update TWAP, to be permissioned
+    function updateTWAPPrice(CToken cToken) external returns (bool) {
+        Anchor memory marketAnchor = anchors[address(cToken)];
+        uint256 cumulativeSum = marketAnchor.cumulativeSum;
+        uint256 price = cumulativeSum / twapPeriod;
+        anchors[address(cToken)].anchorPrice = price;
+        return true;
+    }
+
+    function compareStrings(string memory a, string memory b) internal pure returns (bool) {
+        if (keccak256(bytes(a)) == keccak256(bytes(b))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /*** Admin or guardian functions ***/
 
-    event AggregatorUpdated(address cTokenAddress, address source, AggregatorBase base);
+    event AggregatorUpdated(address cTokenAddress, address source, ChainlinkAggregatorBase base);
     event SetGuardian(address guardian);
     event SetAdmin(address admin);
     event newLodeOracle(address newLodeOracle);
@@ -186,7 +315,7 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     function _setAggregators(
         address[] calldata cTokenAddresses,
         address[] calldata sources,
-        AggregatorBase[] calldata bases
+        ChainlinkAggregatorBase[] calldata bases
     ) external onlyOwner {
         require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, "mismatched data");
         for (uint256 i = 0; i < cTokenAddresses.length; i++) {
