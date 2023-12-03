@@ -176,24 +176,26 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     function getPriceFromChainlink(AggregatorV3Interface aggregator, CToken cToken) internal view returns (uint256) {
         (uint80 roundId, int256 price, uint startedAt, uint updatedAt, uint80 answeredInRound) = aggregator
             .latestRoundData();
-        uint256 twapPrice;
-        if (anchorsEnabled) {
-            twapPrice = getTWAPPrice(cToken);
-        }
+
         require(roundId == answeredInRound && startedAt == updatedAt, "Price not fresh");
         require(price > 0, "invalid price");
 
         // Extend the decimals to 1e18.
         uint256 priceScaled = uint256(price) * 10 ** (18 - uint256(aggregator.decimals()));
 
-        uint256 maxDeviation = (twapPrice * MAX_DEVIATION) / BASE;
-
+        uint256 twapPrice;
         uint256 deviation;
+        uint256 maxDeviation;
 
-        if (twapPrice > priceScaled) {
-            deviation = twapPrice - priceScaled;
-        } else {
-            deviation = priceScaled - twapPrice;
+        if (anchorsEnabled) {
+            twapPrice = getTWAPPrice(cToken);
+            maxDeviation = (twapPrice * MAX_DEVIATION) / BASE;
+
+            if (twapPrice > priceScaled) {
+                deviation = twapPrice - priceScaled;
+            } else {
+                deviation = priceScaled - twapPrice;
+            }
         }
 
         if (deviation < maxDeviation) {
