@@ -179,11 +179,10 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         // Extend the decimals to 1e18.
         uint256 priceScaled = uint256(price) * 10 ** (18 - uint256(aggregator.decimals()));
 
-        uint256 anchorPrice;
-        uint256 deviation;
-        uint256 maxDeviation;
-
         if (anchorsEnabled) {
+            uint256 anchorPrice;
+            uint256 deviation;
+            uint256 maxDeviation;
             anchorPrice = anchors[address(cToken)].anchorPrice;
             maxDeviation = (anchorPrice * MAX_DEVIATION) / BASE;
 
@@ -192,29 +191,12 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
             } else {
                 deviation = priceScaled - anchorPrice;
             }
-        }
 
-        //this logic needs to be deeply examined
-        //we expect that in the vast majority of circumstances, we will rely on the Chainlink oracles
-        //however, should there be a significant deviation in the chainlink feed from the TWAP of the anchor pool
-        //then the chainlink oracle has either rightfully or wrongfully deviated.
-        //if the chainlink oracle has rightfully deviated, we need for our TWAP price to quickly fall back within the deviation threshold
-        //if the chainlink oracle has wrongfully deviated, we want to return the TWAP price (provided it is good)
-        //until the chainlink oracle has situated itself again.
-        //How does one determine which is the case?
-        //I think the only thing we can do is assume the chainlink oracle is wrong, but make the TWAP range tight enough
-        //such that if correct, the TWAP will converge with the real price and go back to reporting the chainlink price quickly without
-        //undesirable amounts of price lag
-        //this however puts quite a bit of faith into the calculated TWAP price in these rare circumstances, and needs to be carefully executed
-        //in practice to avoid potential manipulation.
-        //the relationship between lag/accuracy given twap period should be examined for various assets. maybe do something like the IRM's where
-        //different asset classes have different twap periods depending on intended behavior? worth discussing.
-
-        if (deviation < maxDeviation) {
-            return priceScaled;
-        } else {
-            return anchors[address(cToken)].anchorPrice;
+            if (deviation > maxDeviation) {
+                return anchorPrice;
+            }
         }
+        return priceScaled;
     }
 
     /**
@@ -267,6 +249,7 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         }
 
         uint8 indexMod = currentIndex % twapPeriod;
+
         Observation[] memory marketObservations = observations[address(cToken)];
         Observation memory marketObservationCurrentIndex = marketObservations[indexMod];
         uint256 priceChop = marketObservationCurrentIndex.price;
