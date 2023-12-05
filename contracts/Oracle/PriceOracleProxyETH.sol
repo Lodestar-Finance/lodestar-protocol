@@ -244,14 +244,15 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
             price = (reserve1 * BASE) / reserve0;
         }
 
-        if (currentIndex == 0) {
-            observations[address(cToken)] = new Observation[](twapPeriod);
-        }
-
         uint8 indexMod = currentIndex % twapPeriod;
 
-        Observation[] memory marketObservations = observations[address(cToken)];
-        Observation memory marketObservationCurrentIndex = marketObservations[indexMod];
+        Observation[] storage marketObservations = observations[address(cToken)];
+        if (marketObservations.length == currentIndex && currentIndex <= twapPeriod) {
+            Observation memory currentObservation = Observation(price, block.timestamp);
+            marketObservations.push(currentObservation);
+        }
+
+        Observation storage marketObservationCurrentIndex = marketObservations[indexMod];
         uint256 priceChop = marketObservationCurrentIndex.price;
 
         observations[address(cToken)][indexMod].price = price;
@@ -331,10 +332,21 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         }
     }
 
-    function _updateAnchor(CToken cToken, IUniswapV2Pair source, string memory name) external onlyOwner {
+    function _updateAnchor(CToken cToken, IUniswapV2Pair source, string memory name) public onlyOwner {
         require(address(source) != address(0) && address(cToken) != address(0), "Invalid input(s)");
         anchors[address(cToken)].name = name;
         anchors[address(cToken)].source = source;
         emit AnchorUpdated(name, source);
+    }
+
+    function _updateAnchors(
+        CToken[] calldata cTokens,
+        IUniswapV2Pair[] calldata sources,
+        string[] calldata names
+    ) external onlyOwner {
+        require(cTokens.length == sources.length && cTokens.length == names.length, "data mismatch");
+        for (uint i = 0; i < cTokens.length; i++) {
+            _updateAnchor(cTokens[i], sources[i], names[i]);
+        }
     }
 }
