@@ -14,7 +14,7 @@ import "./CTokenInterfaces.sol";
  * @title Compound's Comptroller Contract
  * @author Compound
  */
-contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
+contract Comptroller is ComptrollerV10Storage, ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
     /// @notice Emitted when an admin supports a market
     event MarketListed(CToken cToken);
 
@@ -25,6 +25,7 @@ contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerE
     event MarketExited(CToken cToken, address account);
 
     /// @notice Emitted when close factor is changed by admin
+
     event NewCloseFactor(uint oldCloseFactorMantissa, uint newCloseFactorMantissa);
 
     /// @notice Emitted when a collateral factor is changed by admin
@@ -1493,6 +1494,9 @@ contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerE
      * @return The amount of COMP which was NOT transferred to the user
      */
     function grantCompInternal(address user, uint amount) internal returns (uint) {
+        //test this to make sure msg.sender is emissionsModule and not this address from an internal call
+        //think this should be correct
+        require(msg.sender == address(emissionsModule), "only emissions module can grant comp");
         Comp comp = Comp(getCompAddress());
         uint compRemaining = comp.balanceOf(address(this));
         if (amount > 0 && amount <= compRemaining) {
