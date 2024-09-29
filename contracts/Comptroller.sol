@@ -1496,7 +1496,7 @@ contract Comptroller is ComptrollerV10Storage, ComptrollerInterface, Comptroller
     function grantCompInternal(address user, uint amount) internal returns (uint) {
         //test this to make sure msg.sender is emissionsModule and not this address from an internal call
         //think this should be correct
-        require(msg.sender == address(emissionsModule), "only emissions module can grant comp");
+        require(msg.sender == emissionsModule, "only emissions module can grant comp");
         Comp comp = Comp(getCompAddress());
         uint compRemaining = comp.balanceOf(address(this));
         if (amount > 0 && amount <= compRemaining) {
