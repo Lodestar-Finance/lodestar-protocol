@@ -6,25 +6,37 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable2Step.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {StakingRewardsInterface} from "../node_modules/lodestar-helper/contracts/Interfaces/StakingRewardsInterface.sol";
+import {WETHUtils} from "../node_modules/lodestar-helper/contracts/Utils/WETHUtils.sol";
 
 import "./util/StorageAccessible.sol";
-
 import "./ComptrollerInterface.sol";
 import "./Oracle/Interfaces/IBEXAggregator.sol";
 import "./Lens/ILens.sol";
+import {EmissionsTokenInterface} from "./Governance/EmissionsTokenInterface.sol";
 
 contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAccessible {
     using SafeERC20 for IERC20;
+
+    function _msgSender() internal view override returns (address) {
+        return super._msgSender();
+    }
+
+    function _msgData() internal view override returns (bytes calldata) {
+        return super._msgData();
+    }
 
     ComptrollerInterface public comptroller;
     address public emissionsHandler;
     IBEXAggregator public oracle;
     ILens public lens;
+    StakingRewardsInterface public stakingRewards;
 
     uint256 public pendingFees;
     uint256 FEE_PERCENTAGE;
 
     IERC20 public emissionsToken;
+    IERC20 public convertedToken;
     IERC20 public feeToken;
     address public pool;
 
@@ -39,6 +51,8 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
     event LensSet(address indexed lens);
     event Claimed(address indexed account, uint256 amount);
     event FeesHandled(uint256 amount);
+    event StakingRewardsSet(address indexed stakingRewards);
+    event FeeIsZero(uint256 timestamp);
 
     //emissions handler intentionally not set in constructor
     constructor(
@@ -47,7 +61,8 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
         uint256 feePercentage,
         IERC20 emissionsToken_,
         IERC20 feeToken_,
-        address pool_
+        address pool_,
+        StakingRewardsInterface stakingRewards_
     ) Ownable() {
         comptroller = comptroller_;
         oracle = emissionsTokenOracle;
@@ -55,6 +70,7 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
         emissionsToken = emissionsToken_;
         feeToken = feeToken_;
         pool = pool_;
+        stakingRewards = stakingRewards_;
     }
 
     function getClaimable(address account_) public returns (uint256) {
@@ -66,22 +82,38 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
     function getFee(uint256 amount_) public view returns (uint256) {
         uint256 price = oracle.getPrice(pool);
         //assuming the price is scaled to 18 decimals, we need to scale it back to 18 after multiplying
-        uint256 fee = (amount_ * price * FEE_PERCENTAGE) / 1e36;
+        return (amount_ * price * FEE_PERCENTAGE) / 1e36;
     }
 
-    function claim() external payable nonReentrant whenNotPaused {
-        uint256 amount = getClaimable(msg.sender);
-        require(amount > 0, "No claimable emissions");
-        if (isExemptFromFees[msg.sender]) {
-            comptroller.claimComp(msg.sender);
+    function convert(uint256 amount, uint256 lockTime) external payable nonReentrant whenNotPaused {
+        require(amount > 0, "amount must not be 0");
+        emissionsToken.safeTransferFrom(msg.sender, address(this), amount);
+        emissionsToken.burn(amount);
+        if (isExemptFromFees[msg.sender] && lockTime == 0) {
+            //this is just a whitelisted actor, so we give them the converted tokens directly
+            convertedToken.safeTransferFrom(address(this), msg.sender, amount);
+            return;
+        } else if (lockTime > 0) {
+            //stake the converted tokens on behalf of the user
+            //validation checks happen in stakingRewards
+            stakingRewards.stakeLODEBehalf(msg.sender, amount, lockTime);
             return;
         } else {
+            //if user is not exempt from fees and is not staking, we need to take a fee
             uint256 fee = getFee(amount);
-            require(fee > 0, "Fee is 0");
+            //fee should never be 0 if amount is > 0, if it is then that means the oracle price is 0 and we should emit a log
+            if (fee == 0) {
+                emit FeeIsZero(block.timestamp);
+                revert("Fee is 0");
+            }
             if (msg.value > 0) {
                 require(msg.value >= fee, "Insufficient funds");
                 //if the user wants to pay in native tokens we need to wrap them before anything else
                 //TODO:wrap tokens here, verify
+                uint256 balanceBefore = address(feeToken).balanceOf(address(this));
+                WETHUtils.wrapEther(fee);
+                uint256 balanceAfter = address(feeToken).balanceOf(address(this));
+                require(balanceAfter - balanceBefore == fee, "Incorrect fee amount");
                 pendingFees += fee;
                 unchecked {
                     uint256 toReturn = msg.value - fee;
@@ -91,9 +123,6 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
                 feeToken.safeTransferFrom(msg.sender, address(this), fee);
                 pendingFees += fee;
             }
-
-            //we should always have transferred in the fee at this point, so we can now process the rewards token claim
-            comptroller.claimComp(msg.sender);
             return;
         }
     }
@@ -132,6 +161,12 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
         require(address(feeToken_) != address(0), "Invalid fee token");
         feeToken = feeToken_;
         emit FeeTokenSet(address(feeToken_));
+    }
+
+    function setStakingRewards(StakingRewardsInterface stakingRewards_) external onlyOwner {
+        require(address(stakingRewards_) != address(0), "Invalid staking rewards");
+        stakingRewards = stakingRewards_;
+        emit StakingRewardsSet(address(stakingRewards_));
     }
 
     function pause() external onlyOwner {
