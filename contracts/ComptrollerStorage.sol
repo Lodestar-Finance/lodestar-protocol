@@ -164,7 +164,3 @@ contract ComptrollerV9Storage is ComptrollerV8Storage {
 
     address public speedGuardian;
 }
-
-contract ComptrollerV10Storage is ComptrollerV9Storage {
-    address public emissionsModule;
-}

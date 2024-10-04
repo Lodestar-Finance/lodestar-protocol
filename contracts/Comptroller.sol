@@ -14,7 +14,7 @@ import "./CTokenInterfaces.sol";
  * @title Compound's Comptroller Contract
  * @author Compound
  */
-contract Comptroller is ComptrollerV10Storage, ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
+contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerErrorReporter, ExponentialNoError {
     /// @notice Emitted when an admin supports a market
     event MarketListed(CToken cToken);
 
@@ -919,6 +919,10 @@ contract Comptroller is ComptrollerV10Storage, ComptrollerInterface, Comptroller
         return (uint(Error.NO_ERROR), seizeTokens);
     }
 
+    function getOracle() external view override returns (address) {
+        return address(oracle);
+    }
+
     /*** Admin Functions ***/
 
     /**
@@ -1441,7 +1445,7 @@ contract Comptroller is ComptrollerV10Storage, ComptrollerInterface, Comptroller
      * @notice Claim all the comp accrued by holder in all markets
      * @param holder The address to claim COMP for
      */
-    function claimComp(address holder) public {
+    function claimComp(address holder) public override {
         return claimComp(holder, allMarkets);
     }
 
@@ -1494,9 +1498,6 @@ contract Comptroller is ComptrollerV10Storage, ComptrollerInterface, Comptroller
      * @return The amount of COMP which was NOT transferred to the user
      */
     function grantCompInternal(address user, uint amount) internal returns (uint) {
-        //test this to make sure msg.sender is emissionsModule and not this address from an internal call
-        //think this should be correct
-        require(msg.sender == emissionsModule, "only emissions module can grant comp");
         Comp comp = Comp(getCompAddress());
         uint compRemaining = comp.balanceOf(address(this));
         if (amount > 0 && amount <= compRemaining) {
