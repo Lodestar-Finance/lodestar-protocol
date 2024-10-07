@@ -49,7 +49,7 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
     event OracleSet(address indexed oracle);
     event FeePercentageSet(uint256 feePercentage);
     event LensSet(address indexed lens);
-    event Claimed(address indexed account, uint256 amount);
+    event ConvertedTokens(address indexed account, uint256 amount, uint256 fee);
     event FeesHandled(uint256 amount);
     event StakingRewardsSet(address indexed stakingRewards);
     event FeeIsZero(uint256 timestamp);
@@ -87,21 +87,25 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
 
     function convert(uint256 amount, uint256 lockTime) external payable nonReentrant whenNotPaused {
         require(amount > 0, "amount must not be 0");
+        //transfer tokens from user to this contract and burn them
         emissionsToken.safeTransferFrom(msg.sender, address(this), amount);
         emissionsToken.burn(amount);
         if (isExemptFromFees[msg.sender] && lockTime == 0) {
-            //this is just a whitelisted actor, so we give them the converted tokens directly
+            //this is a whitelisted actor, so we give them the converted tokens directly
             convertedToken.safeTransferFrom(address(this), msg.sender, amount);
+            emit ConvertedTokens(msg.sender, amount, 0);
             return;
         } else if (lockTime > 0) {
             //stake the converted tokens on behalf of the user
-            //validation checks happen in stakingRewards
+            //validation checks happen in stakingRewards, lock time must be restricted to 90 or 180 days.
+            require(lockTime == 90 days || lockTime == 180 days, "Invalid lock time");
             stakingRewards.stakeLODEBehalf(msg.sender, amount, lockTime);
+            emit ConvertedTokens(msg.sender, amount, 0);
             return;
         } else {
             //if user is not exempt from fees and is not staking, we need to take a fee
             uint256 fee = getFee(amount);
-            //fee should never be 0 if amount is > 0, if it is then that means the oracle price is 0 and we should emit a log
+            //fee should never be 0. if amount is > 0, if fee = 0 that means the oracle price is 0 and we should emit a log
             if (fee == 0) {
                 emit FeeIsZero(block.timestamp);
                 revert("Fee is 0");
@@ -113,15 +117,20 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
                 uint256 balanceBefore = address(feeToken).balanceOf(address(this));
                 WETHUtils.wrapEther(fee);
                 uint256 balanceAfter = address(feeToken).balanceOf(address(this));
+                //necessary? put in unchecked?
                 require(balanceAfter - balanceBefore == fee, "Incorrect fee amount");
                 pendingFees += fee;
                 unchecked {
+                    //we know that fee < msg.value, so this will not revert
                     uint256 toReturn = msg.value - fee;
                     payable(msg.sender).transfer(toReturn);
                 }
+                emit ConvertedTokens(msg.sender, amount, fee);
             } else {
+                //if they are not paying with native tokens, they must pay with the fee token
                 feeToken.safeTransferFrom(msg.sender, address(this), fee);
                 pendingFees += fee;
+                emit ConvertedTokens(msg.sender, amount, fee);
             }
             return;
         }
@@ -129,6 +138,15 @@ contract EmissionsModule is Ownable2Step, Pausable, ReentrancyGuard, StorageAcce
 
     function handleFees() external nonReentrant whenNotPaused {
         //add fee handling logic
+        //so, we need to take the current amount of pending fees,
+        require(msg.sender == emissionsHandler, "Caller is not the emissions handler");
+        uint256 amount = pendingFees;
+        if (amount == 0) {
+            return;
+        }
+        pendingFees = 0;
+        feeToken.safeTransfer(msg.sender, amount);
+        emit FeesHandled(amount);
     }
 
     //** ADMIN FUNCTIONS */
