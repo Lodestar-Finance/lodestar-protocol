@@ -28,20 +28,6 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     /// @notice Ether cToken address
     address public letherAddress;
 
-    /// @notice plvGLP cToken address
-    address public lplvGLPAddress;
-
-    /// @notice GLP Oracle address
-    address public glpOracleAddress;
-
-    /// @notice Chainlink L2 sequencer aggregator address
-    address public sequencerAddress;
-
-    /// @notice LODE oracle address (SushiOracle)
-    address public lodeOracle;
-
-    uint256 lodePrice;
-
     struct AggregatorInfo {
         /// @notice The source address of the aggregator
         AggregatorV3Interface source;
@@ -57,23 +43,14 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
 
     /**
      * @param ethUsdAggregator_ the address of the ETH/USD Chainlink aggregator
-     * @param sequencerAddress_ the address of the Chainlink L2 sequencer aggregator
      * @param letherAddress_ the address of the Ether cToken
-     * @param lplvGLPAddress_ the address of the plvGLP cToken
-     * @param glpOracleAddress_ the address of the GLP Oracle contract
      */
     constructor(
         address ethUsdAggregator_,
-        address sequencerAddress_,
         address letherAddress_,
-        address lplvGLPAddress_,
-        address glpOracleAddress_
-    ) {
+    ) Ownable(msg.sender) {
         ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
-        sequencerAddress = sequencerAddress_;
         letherAddress = letherAddress_;
-        lplvGLPAddress = lplvGLPAddress_;
-        glpOracleAddress = glpOracleAddress_;
     }
 
     /**
@@ -84,26 +61,12 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     function getUnderlyingPrice(CToken cToken) public view returns (uint256) {
         address cTokenAddress = address(cToken);
         AggregatorInfo memory aggregatorInfo = aggregators[cTokenAddress];
-        bool sequencerStatus;
         if (cTokenAddress == letherAddress) {
             uint256 price = 1e18;
             return price;
-        } else if (cTokenAddress == lplvGLPAddress) {
-            sequencerStatus = getSequencerStatus(sequencerAddress);
-            if (sequencerStatus == false) {
-                // If flag is raised we shouldn't perform any critical operations
-                revert("Chainlink feeds are not being updated");
-            }
-            uint256 price = getPlvGLPPrice();
-            price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
-            return price;
         } else if (address(aggregatorInfo.source) != address(0)) {
-            sequencerStatus = getSequencerStatus(sequencerAddress);
             uint256 price = getPriceFromChainlink(aggregatorInfo.source);
-            if (sequencerStatus == false) {
-                // If flag is raised we shouldn't perform any critical operations
-                revert("Chainlink feeds are not being updated");
-            } else if (aggregatorInfo.base == AggregatorBase.USD) {
+            if (aggregatorInfo.base == AggregatorBase.USD) {
                 // Convert the price to ETH based if it's USD based.
                 price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
                 uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
@@ -133,49 +96,9 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
         return uint256(price) * 10 ** (18 - uint256(aggregator.decimals()));
     }
 
-    /**
-     * @notice Get the price of plvGLP
-     * @return The price of plvGLP already scaled to 18 decimals
-     */
-    function getPlvGLPPrice() internal view returns (uint256) {
-        uint256 price = PlvGLPOracleInterface(glpOracleAddress).getPlvGLPPrice();
-        require(price > 0, "invalid price");
-        return price;
-    }
-
-    /**
-     * @notice Get L2 sequencer status from Chainlink sequencer aggregator
-     * @param sequencer the address of the Chainlink sequencer aggregator ("sequencerAddress" in constructor)
-     * @return the L2 sequencer status as a boolean (true = the sequencer is up, false = the sequencer is down)
-     */
-    function getSequencerStatus(address sequencer) internal view returns (bool) {
-        bool status;
-        (, int256 answer, uint256 startedAt, , ) = AggregatorV3Interface(sequencer).latestRoundData();
-        if (answer == 0 && block.timestamp - startedAt > GRACE_PERIOD_TIME) {
-            status = true;
-        } else if (answer == 1) {
-            status = false;
-        }
-        return status;
-    }
-
     /*** Admin or guardian functions ***/
 
     event AggregatorUpdated(address cTokenAddress, address source, AggregatorBase base);
-    event SetGuardian(address guardian);
-    event SetAdmin(address admin);
-    event newLodeOracle(address newLodeOracle);
-    event newGlpOracle(address newGlpOracle);
-
-    /**
-     * @notice Set guardian for price oracle proxy
-     * @param _newGlpOracle The new LODE oracle contract
-     */
-    function _setGlpOracle(PlvGLPOracleInterface _newGlpOracle) external onlyOwner {
-        require(_newGlpOracle.isGLPOracle(), "Invalid Contract");
-        glpOracleAddress = address(_newGlpOracle);
-        emit newGlpOracle(glpOracleAddress);
-    }
 
     /**
      * @notice Set ChainLink aggregators for multiple cTokens
