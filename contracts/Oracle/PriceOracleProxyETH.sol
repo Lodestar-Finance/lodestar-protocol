@@ -45,10 +45,7 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
      * @param ethUsdAggregator_ the address of the ETH/USD Chainlink aggregator
      * @param letherAddress_ the address of the Ether cToken
      */
-    constructor(
-        address ethUsdAggregator_,
-        address letherAddress_,
-    ) Ownable(msg.sender) {
+    constructor(address ethUsdAggregator_, address letherAddress_) Ownable(msg.sender) {
         ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
         letherAddress = letherAddress_;
     }
