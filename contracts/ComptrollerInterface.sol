@@ -95,6 +95,4 @@ abstract contract ComptrollerInterface {
     ) external view virtual returns (uint, uint);
 
     function claimComp(address holder) external virtual;
-
-    function getOracle() external view virtual returns (address);
 }
