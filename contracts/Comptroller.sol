@@ -919,10 +919,6 @@ contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerE
         return (uint(Error.NO_ERROR), seizeTokens);
     }
 
-    function getOracle() external view override returns (address) {
-        return address(oracle);
-    }
-
     /*** Admin Functions ***/
 
     /**
