@@ -28,8 +28,6 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     /// @notice Ether cToken address
     address public letherAddress;
 
-    address public lberaAddress;
-
     struct AggregatorInfo {
         /// @notice The source address of the aggregator
         AggregatorV3Interface source;
@@ -46,12 +44,10 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
     /**
      * @param ethUsdAggregator_ the address of the ETH/USD Chainlink aggregator
      * @param letherAddress_ the address of the Ether cToken
-     * @param lberaAddress_ the address of the BERA cToken
      */
-    constructor(address ethUsdAggregator_, address letherAddress_, address lberaAddress_) Ownable() {
+    constructor(address ethUsdAggregator_, address letherAddress_) Ownable() {
         ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
         letherAddress = letherAddress_;
-        lberaAddress = lberaAddress_;
     }
 
     /**
@@ -70,20 +66,10 @@ contract PriceOracleProxyETH is Ownable2Step, Exponential {
             if (aggregatorInfo.base == AggregatorBase.USD) {
                 // Convert the price to ETH based if it's USD based.
                 price = div_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
-                uint256 underlyingDecimals;
-                if (cTokenAddress == lberaAddress) {
-                    underlyingDecimals = 18;
-                } else {
-                    underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
-                }
+                uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
                 return price * 10 ** (18 - underlyingDecimals);
             } else if (aggregatorInfo.base == AggregatorBase.ETH) {
-                uint256 underlyingDecimals;
-                if (cTokenAddress == lberaAddress) {
-                    underlyingDecimals = 18;
-                } else {
-                    underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
-                }
+                uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
                 return price * 10 ** (18 - underlyingDecimals);
             }
         }
