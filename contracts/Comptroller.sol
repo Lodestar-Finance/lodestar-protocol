@@ -1590,6 +1590,6 @@ contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerE
      */
 
     function getCompAddress() public view virtual returns (address) {
-        return 0xeaf3ece1d5b856c6a5a1254f84b063518fc27774;
+        return 0xEaf3EcE1D5b856c6a5A1254f84B063518fC27774;
     }
 }
