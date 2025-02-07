@@ -1441,7 +1441,7 @@ contract Comptroller is ComptrollerV9Storage, ComptrollerInterface, ComptrollerE
      * @notice Claim all the comp accrued by holder in all markets
      * @param holder The address to claim COMP for
      */
-    function claimComp(address holder) public override {
+    function claimComp(address holder) public {
         return claimComp(holder, allMarkets);
     }
 
